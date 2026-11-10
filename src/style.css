@@ -593,3 +593,8 @@ input[type='range']::-moz-range-thumb {
     flex-basis: 8.6em;
   }
 }
+
+/* 経過時間の行は中央ぞろえ（横いっぱいの行で左寄せだと余白が不自然なため） */
+.cell.wide {
+  text-align: center;
+}

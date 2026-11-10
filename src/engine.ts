@@ -131,8 +131,17 @@ export class Engine {
   private static readonly MAX_VOICES = 2;
   private voices: { gain: GainNode; src: AudioBufferSourceNode; end: number }[] = [];
 
-  private playAt(buffer: AudioBuffer, time: number, rate: number): void {
+  private playAt(buffer: AudioBuffer, time: number, rate: number, layer: 'main' | 'levelup' = 'main'): void {
     if (!this.ctx) return;
+    // レベルアップ音は別レイヤー: 上限の対象にせず、フェードアウトもされない
+    if (layer === 'levelup') {
+      const src = this.ctx.createBufferSource();
+      src.buffer = buffer;
+      src.playbackRate.value = rate;
+      src.connect(this.ctx.destination);
+      src.start(time);
+      return;
+    }
     // time 時点で鳴り終わっている声は数えない
     this.voices = this.voices.filter((v) => v.end > time);
     // 上限に達していたら古い順に止める（新しい音のアタックは必ず鳴らす）
@@ -235,7 +244,7 @@ export class Engine {
         this.playAt(this.mainBuf, ev.time, 1.0);
         break;
       case 'runStart':
-        if (this.levelBuf) this.playAt(this.levelBuf, ev.time, 1.0);
+        if (this.levelBuf) this.playAt(this.levelBuf, ev.time, 1.0, 'levelup');
         break;
       case 'note':
         this.playAt(this.mainBuf, ev.time, ev.rate ?? 1.0);
@@ -245,7 +254,7 @@ export class Engine {
         this.playAt(this.mainBuf, ev.time, 0.5);
         if (ev.leveledUp && ev.levelAfter) {
           const buf = this.levelBufs.get(ev.levelAfter) ?? this.levelBuf;
-          if (buf) this.playAt(buf, ev.time, 1.0);
+          if (buf) this.playAt(buf, ev.time, 1.0, 'levelup');
         }
         break;
       }
