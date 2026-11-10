@@ -583,3 +583,13 @@ input[type='range']::-moz-range-thumb {
     border-right: none;
   }
 }
+
+/* 横長・実行画面の幅そろえ: グリッドを全幅に伸ばす（v17） */
+@media (min-width: 900px) {
+  #runPanel {
+    align-items: stretch;
+  }
+  .row label {
+    flex-basis: 8.6em;
+  }
+}
