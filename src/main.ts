@@ -171,9 +171,12 @@ function setFit(el: HTMLElement, text: string, maxPx: number): void {
   byLength.set(text.length, size);
 }
 
-// カウンターは「無限」が前提: 20桁でも収まるよう自動で縮める
+// カウンターは「無限」が前提: 20桁でも収まるよう自動で縮める。
+// 横長（配信）では中央にどでかく出すため基準サイズを上げる
 function renderCount(n: number): void {
-  setFit(bigCount, n.toLocaleString('en-US'), 92);
+  const base =
+    window.innerWidth >= 900 ? (window.innerHeight <= 850 ? 170 : 250) : 92;
+  setFit(bigCount, n.toLocaleString('en-US'), base);
 }
 
 // フレーム単位のリアルタイム描画

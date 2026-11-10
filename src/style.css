@@ -542,3 +542,44 @@ input[type='range']::-moz-range-thumb {
     font-size: 130px;
   }
 }
+
+/* 横長・実行画面: 回数を中央にどでかく置き、記録グリッドはその下に横いっぱい（v15） */
+@media (min-width: 900px) {
+  #runPanel {
+    display: flex;
+    flex-direction: column;
+  }
+  #runPanel .rt-head {
+    width: min(920px, 100%);
+    margin: 0 auto;
+    text-align: center;
+  }
+  .rt-caption {
+    text-align: center;
+  }
+  #runPanel .grid {
+    margin-top: 22px;
+  }
+  #runPanel .stop-btn {
+    width: 440px;
+    max-width: 100%;
+    margin: 22px auto 0;
+  }
+  /* グリッドは横に広げる: 詳細は5列、普通は4列 */
+  #runPanel.detail .grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  #runPanel:not(.detail) .grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  /* 2列時代に右列扱いだったセルの区切り線を戻し、新しい行末だけ消す */
+  #runPanel.detail .cell.rcol,
+  #runPanel:not(.detail) .cell.rcol {
+    border-right: 1px solid #d8d2c0;
+  }
+  #runPanel.detail .cell:nth-child(5),
+  #runPanel.detail .cell:nth-child(10),
+  #runPanel:not(.detail) .cell:nth-child(4) {
+    border-right: none;
+  }
+}
