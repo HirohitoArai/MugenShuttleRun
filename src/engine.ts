@@ -125,13 +125,31 @@ export class Engine {
       .finally(() => this.converting.delete(level));
   }
 
+  // 同時再生の上限（本人の指示で 2 トラックまで）。
+  // 音源が約2秒響くため、速度が上がると何重にも重なって響きすぎる。
+  // 新しい音が鳴る時点で既に2つ鳴っていたら、一番古い音をその時点で短くフェードアウトする。
+  private static readonly MAX_VOICES = 2;
+  private voices: { gain: GainNode; src: AudioBufferSourceNode; end: number }[] = [];
+
   private playAt(buffer: AudioBuffer, time: number, rate: number): void {
     if (!this.ctx) return;
+    // time 時点で鳴り終わっている声は数えない
+    this.voices = this.voices.filter((v) => v.end > time);
+    // 上限に達していたら古い順に止める（新しい音のアタックは必ず鳴らす）
+    while (this.voices.length >= Engine.MAX_VOICES) {
+      const oldest = this.voices.shift()!;
+      oldest.gain.gain.setValueAtTime(1, time);
+      oldest.gain.gain.linearRampToValueAtTime(0, time + 0.04);
+      oldest.src.stop(time + 0.05);
+    }
     const src = this.ctx.createBufferSource();
     src.buffer = buffer;
     src.playbackRate.value = rate;
-    src.connect(this.ctx.destination);
+    const gain = this.ctx.createGain();
+    src.connect(gain);
+    gain.connect(this.ctx.destination);
     src.start(time);
+    this.voices.push({ gain, src, end: time + buffer.duration / rate });
   }
 
   // ---- イベント生成（現行の Up / Down / Wrap の構造に対応） ----
@@ -398,6 +416,7 @@ export class Engine {
     this.events = [];
     this.evPtr = 0;
     this.schedPtr = 0;
+    this.voices = [];
     this.upcomingLevelUps = [];
     this.wakeLock?.release().catch(() => undefined);
     this.wakeLock = null;
