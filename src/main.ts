@@ -75,15 +75,6 @@ ensureConverter();
 
 const engine = new Engine();
 
-function fmtTime(sec: number): string {
-  const s = Math.floor(sec);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const ss = s % 60;
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${p(h)}:${p(m)}:${p(ss)}`;
-}
-
 const shuttleTimeVal = $('shuttleTimeVal');
 const paceVal = $('paceVal');
 const distanceVal = $('distanceVal');
@@ -102,18 +93,33 @@ const calorieLabel = $('calorieLabel');
 // ---- 無限に増える数値の表示（単位を段階的に上げ、桁が伸び続けないようにする） ----
 // 整形ロジックは format.ts（単体テスト対象）
 
-// 表示幅に合わせてフォントを自動で縮める（テキストが変わった時だけ測る）
+// 表示幅に合わせてフォントを自動で縮める。
+// 実測はレイアウト計算を強いるので、「要素 × 文字数」ごとに結果を覚えて使い回す
+// （同じ長さの値が毎フレーム来ても、測るのは最初の1回だけ）。
+const fitCache = new WeakMap<HTMLElement, Map<number, number>>();
 function setFit(el: HTMLElement, text: string, maxPx: number): void {
   if (el.dataset.t === text) return;
   el.dataset.t = text;
   el.textContent = text;
+
+  let byLength = fitCache.get(el);
+  const cached = byLength?.get(text.length);
+  if (cached !== undefined) {
+    el.style.fontSize = `${cached}px`;
+    return;
+  }
+
   el.style.fontSize = `${maxPx}px`;
   const avail = (el.parentElement?.clientWidth ?? 260) - 20;
   if (avail <= 40) return; // 非表示中は測れないので最大サイズのままにする
   const w = el.scrollWidth;
-  if (w > avail && w > 0) {
-    el.style.fontSize = `${Math.max(13, Math.floor((maxPx * avail) / w))}px`;
+  const size = w > avail && w > 0 ? Math.max(13, Math.floor((maxPx * avail) / w)) : maxPx;
+  el.style.fontSize = `${size}px`;
+  if (!byLength) {
+    byLength = new Map();
+    fitCache.set(el, byLength);
   }
+  byLength.set(text.length, size);
 }
 
 // カウンターは「無限」が前提: 20桁でも収まるよう自動で縮める
@@ -127,7 +133,7 @@ function renderRT(): void {
   rafId = requestAnimationFrame(renderRT);
   const d = lastDisplay;
   if (!d || d.phase !== 'running') return;
-  const info = engine.liveInfo();
+  const info = engine.live();
   if (!info) return;
 
   renderCount(info.completed);
@@ -140,11 +146,7 @@ function renderRT(): void {
   setFit(timeVal, fmtDuration(info.elapsed), 42);
   noteVal.textContent = NOTE_NAMES[info.noteIndex] ?? 'ド';
   setFit(shuttleTimeVal, fmtDuration(info.shuttleDuration), 42);
-  if (info.nextLevelInSec !== null) {
-    setFit(nextLevelVal, fmtDuration(info.nextLevelInSec), 42);
-  } else {
-    setFit(nextLevelVal, '--', 42);
-  }
+  setFit(nextLevelVal, fmtDuration(info.nextLevelInSec), 42);
   const dist = fmtDistance(info.distanceM);
   setFit(distanceVal, dist.text, 42);
   distanceLabel.textContent = `総走行距離 ${dist.unit}`;

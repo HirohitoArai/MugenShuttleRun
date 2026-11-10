@@ -87,8 +87,8 @@ let queue: Promise<unknown> = Promise.resolve();
  */
 export function convertLevelUp(tempo: number): Promise<ArrayBuffer | null> {
   if (Math.abs(tempo - 1) < 0.001) return Promise.resolve(null);
-  const key = Math.round(tempo * 1000);
-  const existing = cache.get(key);
+  const tempoKey = Math.round(tempo * 1000); // tempo をキャッシュのキーにする（小数3桁まで）
+  const existing = cache.get(tempoKey);
   if (existing) return existing;
 
   const job = queue.then(async (): Promise<ArrayBuffer | null> => {
@@ -112,7 +112,7 @@ export function convertLevelUp(tempo: number): Promise<ArrayBuffer | null> {
     }
   });
   queue = job.catch(() => undefined);
-  cache.set(key, job);
+  cache.set(tempoKey, job);
   // 長時間運転用: 変換キャッシュは直近分だけ残す（際限なく溜めない）
   while (cache.size > 24) {
     const oldest = cache.keys().next().value;

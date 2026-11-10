@@ -62,7 +62,7 @@ export class Engine {
   private timer: number | null = null;
   private wakeLock: WakeLockSentinel | null = null;
 
-  // 生成側の状態（現行コードの Level / Speed / LastTime に対応）
+  // 生成側の状態（未来のイベント列を作る。現行コードの Level / Speed / LastTime に対応）
   private params: RunParams = { initialSpeed: 8, speedRate: 0.5, levelIntervalSec: 60 };
   private runStartTime = 0;
   private gLevel = 1;
@@ -72,6 +72,15 @@ export class Engine {
   private gPhaseStart = 0;
   private gShuttles = 0;
   private genDone = false;
+
+  // 実行側の状態（現在時刻の表示を定数時間で求めるために、適用済みイベントから増分管理する）
+  private livePhaseStart = 0; // 現在のフェイズ（シャトル）が始まった時刻
+  private liveNoteCount = 0; // 現在のフェイズで鳴った note の数
+  private liveDir: 'up' | 'down' = 'up'; // 現在のフェイズの向き
+  private liveLevelElapsed = 0; // 最後にレベルアップした時点の経過秒
+  // 生成済みの次のレベルアップ（折り返し番号と時刻）。生成側が正確に知っているので、
+  // 手元にある間は割り算で推定せずこれを使う
+  private upcomingLevelUps: Array<{ shuttlesAfter: number; time: number }> = [];
 
   display: DisplayState = { phase: 'idle', count: 0, level: 1, speed: 8, shuttles: 0, elapsedSec: 0 };
   onDisplay: ((d: DisplayState) => void) | null = null;
@@ -86,13 +95,13 @@ export class Engine {
     return this.ctx!.decodeAudioData(buf);
   }
 
-  /** そのレベルの速度（現行の加算ルール: Lv1→2 の遷移だけ速度変化が2倍） */
+  /**
+   * そのレベルの速度。加算ルール（Lv1→2 だけ速度変化が2倍、以降は等差）を閉じた式にした:
+   * level >= 2 では 初期速度 + 速度変化 × level になる。
+   */
   private speedAtLevel(level: number): number {
-    let s = this.params.initialSpeed;
-    for (let l = 1; l < level; l++) {
-      s += l <= 1 ? this.params.speedRate * 2 : this.params.speedRate;
-    }
-    return s;
+    if (level <= 1) return this.params.initialSpeed;
+    return this.params.initialSpeed + this.params.speedRate * level;
   }
 
   /** レベル n 用のレベルアップ音を用意する（先読み変換）。 */
@@ -127,7 +136,7 @@ export class Engine {
 
   // ---- イベント生成（現行の Up / Down / Wrap の構造に対応） ----
   private genPhase(): void {
-    const I = 8 / this.gSpeed; // Tonelength 秒 = 8000ms / Speed
+    const I = 8 / Math.max(this.gSpeed, 0.1); // Tonelength 秒 = 8000ms / Speed
     const start = this.gPhaseStart;
     for (let k = 0; k < 8; k++) {
       const rate = this.gDir === 'up' ? PITCHES[k] : PITCHES[7 - k];
@@ -147,6 +156,7 @@ export class Engine {
       this.ensureLevelBuffer(this.gLevel + 1);
       this.ensureLevelBuffer(this.gLevel + 2);
     }
+    if (leveledUp) this.upcomingLevelUps.push({ shuttlesAfter: this.gShuttles, time: wrapTime });
     this.events.push({
       time: wrapTime,
       kind: 'wrap',
@@ -190,21 +200,12 @@ export class Engine {
       changed = true;
     }
     if (changed) this.emit();
-    // 過去イベントの破棄（長時間運転で配列が際限なく伸びないように）。
-    // 表示とリアルタイム計算に必要なのは「最後に通過した wrap」以降だけ。
+    // 適用済みイベントの破棄（長時間運転で配列が際限なく伸びないように）。
+    // 現在の表示は実行側の状態（live*）で保持しているので、過去分は丸ごと捨てられる。
     if (this.evPtr > 512) {
-      let cut = 0;
-      for (let i = this.evPtr - 1; i >= 0; i--) {
-        if (this.events[i].kind === 'wrap') {
-          cut = i;
-          break;
-        }
-      }
-      if (cut > 0) {
-        this.events.splice(0, cut);
-        this.evPtr -= cut;
-        this.schedPtr -= cut;
-      }
+      this.events.splice(0, this.evPtr);
+      this.schedPtr -= this.evPtr;
+      this.evPtr = 0;
     }
   }
 
@@ -232,6 +233,7 @@ export class Engine {
     }
   }
 
+  /** イベントを1つ表示へ反映し、実行側の状態（live*）も同じ場所で進める */
   private applyDisplay(ev: Ev): void {
     switch (ev.kind) {
       case 'countBeep':
@@ -241,27 +243,42 @@ export class Engine {
       case 'runStart':
         this.display.phase = 'running';
         this.display.count = 0;
+        this.livePhaseStart = ev.time;
+        this.liveNoteCount = 0;
+        this.liveDir = 'up';
+        this.liveLevelElapsed = 0;
+        break;
+      case 'note':
+        this.liveNoteCount++;
         break;
       case 'wrap':
         this.display.shuttles = ev.shuttlesAfter ?? this.display.shuttles;
         this.display.level = ev.levelAfter ?? this.display.level;
         this.display.speed = ev.speedAfter ?? this.display.speed;
-        break;
-      default:
+        this.livePhaseStart = ev.time;
+        this.liveNoteCount = 0;
+        // フェイズの向きは完了数と交互（偶数番目のフェイズが上行）
+        this.liveDir = this.display.shuttles % 2 === 0 ? 'up' : 'down';
+        if (ev.leveledUp) {
+          this.liveLevelElapsed = ev.time - this.runStartTime;
+          // 通過したレベルアップをキューから外す
+          while (this.upcomingLevelUps.length > 0 && this.upcomingLevelUps[0].shuttlesAfter <= this.display.shuttles) {
+            this.upcomingLevelUps.shift();
+          }
+        }
         break;
     }
   }
 
-  // ---- リアルタイム表示用（動画形式の表示に倣い、フレーム単位で読む） ----
-  now(): number {
-    return this.ctx ? this.ctx.currentTime : 0;
-  }
+  // ---- リアルタイム表示用 ----
 
   /**
-   * 現在時刻時点のライブ状態を返す。イベント列（生成済み）から正確に求める。
-   * 戻り値が null の間は未開始。countdown 中は elapsed 等が 0 側に張り付く。
+   * 現在時刻時点のライブ状態を返す。イベント列は走査せず、実行側の状態（live*）と
+   * 現在の速度だけから定数時間で求める。未開始なら null。
+   * 前提: 速度はレベルアップの折り返しでしか変わらないので、現在のフェイズと
+   * 次のレベルアップまでの折り返し位置は割り算で正確に決まる。
    */
-  liveInfo(): {
+  live(): {
     elapsed: number;
     completed: number;
     shuttleIndex: number;
@@ -269,80 +286,36 @@ export class Engine {
     shuttleDuration: number;
     shuttleRemaining: number;
     distanceM: number;
-    nextLevelInSec: number | null;
+    nextLevelInSec: number;
     noteIndex: number;
-    noteDir: 'up' | 'down';
   } | null {
     if (!this.ctx || this.display.phase === 'idle') return null;
     const now = this.ctx.currentTime;
     const elapsed = Math.max(0, now - this.runStartTime);
 
-    // 現在のフェイズ（シャトル）の開始と終了をイベント列から探す
-    let phaseStart = this.runStartTime;
-    let completed = 0;
-    let phaseEnd: number | null = null;
-    for (const ev of this.events) {
-      if (ev.kind !== 'wrap') continue;
-      if (ev.time <= now) {
-        phaseStart = ev.time;
-        completed = ev.shuttlesAfter ?? completed;
-      } else {
-        phaseEnd = ev.time;
-        break;
-      }
-    }
-    if (phaseEnd === null) {
-      // 次の wrap が未生成なら、必要分だけ先行生成する
-      for (let i = 0; i < 3000 && phaseEnd === null; i++) {
-        this.genPhase();
-        const last = this.events[this.events.length - 1];
-        if (last && last.time > now) phaseEnd = last.time;
-      }
-    }
-    if (phaseEnd === null) return null;
-    const duration = Math.max(phaseEnd - phaseStart, 0.001);
-    const remaining = Math.max(phaseEnd - now, 0);
-    const progress = Math.min(Math.max((now - phaseStart) / duration, 0), 1);
-    const distanceM = completed * 20 + progress * 20;
+    // 現在のフェイズ（シャトル）内での位置
+    const duration = 72 / Math.max(this.display.speed, 0.1); // 9合図 × (8 / 速度)
+    const phaseStart = this.display.phase === 'running' ? this.livePhaseStart : this.runStartTime;
+    const phaseElapsed = Math.min(Math.max(now - phaseStart, 0), duration);
+    const progress = phaseElapsed / duration;
+    const completed = this.display.shuttles;
 
-    // 現在の音: フェイズは up/down が交互。フェイズ内の note の順番から音名を決める
-    const noteDir: 'up' | 'down' = completed % 2 === 0 ? 'up' : 'down';
-    let noteOrder = 0;
-    for (const ev of this.events) {
-      if (ev.time > now) break;
-      if (ev.kind === 'note' && ev.time > phaseStart) noteOrder++;
+    // 次のレベルアップまでの秒数。生成済みなら生成側の正確な時刻を使い、
+    // まだ生成されていない先の話なら、折り返し本数を割り算で数える
+    // （境界条件が割り算の誤差で1本ずれることがあるが、近づけば生成側の値に切り替わる）。
+    let nextLevelInSec: number;
+    const upcoming = this.upcomingLevelUps[0];
+    if (upcoming) {
+      nextLevelInSec = Math.max(upcoming.time - now, 0);
+    } else {
+      const threshold = this.liveLevelElapsed + this.params.levelIntervalSec;
+      const wrapsToLevelUp = Math.max(1, Math.floor((threshold - elapsed + phaseElapsed) / duration) + 1);
+      nextLevelInSec = Math.max(phaseStart + wrapsToLevelUp * duration - now, 0);
     }
-    const step = Math.max(noteOrder - 1, 0);
-    const noteIndex = noteDir === 'up' ? step : 7 - step;
 
-    // 次のレベルアップ（leveledUp な wrap）を探す
-    let nextLevelInSec: number | null = null;
-    {
-      let found: number | null = null;
-      for (const ev of this.events) {
-        if (ev.kind !== 'wrap' || ev.time <= now) continue;
-        if (ev.leveledUp) {
-          found = ev.time;
-          break;
-        }
-      }
-      if (found === null) {
-        // 未生成の先にレベルアップがあるはずなので、少し先まで生成して再探索する
-        for (let i = 0; i < 3000 && found === null; i++) {
-          const before = this.events.length;
-          this.genPhase();
-          for (let j = before; j < this.events.length; j++) {
-            const ev = this.events[j];
-            if (ev.kind !== 'wrap' || ev.time <= now) continue;
-            if (ev.leveledUp) {
-              found = ev.time;
-              break;
-            }
-          }
-        }
-      }
-      if (found !== null) nextLevelInSec = Math.max(found - now, 0);
-    }
+    // 現在の音: フェイズ内で鳴った note の順番と向きから決まる
+    const step = Math.max(this.liveNoteCount - 1, 0);
+    const noteIndex = this.liveDir === 'up' ? step : 7 - step;
 
     return {
       elapsed,
@@ -350,11 +323,10 @@ export class Engine {
       shuttleIndex: completed + 1,
       shuttleProgress: progress,
       shuttleDuration: duration,
-      shuttleRemaining: remaining,
-      distanceM,
+      shuttleRemaining: duration - phaseElapsed,
+      distanceM: completed * 20 + progress * 20,
       nextLevelInSec,
       noteIndex,
-      noteDir,
     };
   }
 
@@ -420,6 +392,7 @@ export class Engine {
     this.events = [];
     this.evPtr = 0;
     this.schedPtr = 0;
+    this.upcomingLevelUps = [];
     this.wakeLock?.release().catch(() => undefined);
     this.wakeLock = null;
   }
