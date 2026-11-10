@@ -1,6 +1,6 @@
 // 無限シャトルラン Service Worker: 一度取得した資源はキャッシュから返し、
 // 初回ロード後はオフラインでも起動できるようにする（ffmpeg core の CDN 取得分も含む）。
-const CACHE = 'mugen-shuttle-run-v1';
+const CACHE = 'mugen-shuttle-run-v2';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -23,6 +23,21 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
+  // HTML（ナビゲーション）はネットワーク優先。古い index.html が残り続けると
+  // 更新が永久に届かなくなるため。ハッシュ付き資産はキャッシュ優先でよい。
+  const isHtml = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
+  if (isHtml) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((cache) => cache.put(req, copy));
+          return res;
+        })
+        .catch(() => caches.match(req)),
+    );
+    return;
+  }
   event.respondWith(
     caches.match(req, { ignoreSearch: false }).then((hit) => {
       if (hit) return hit;

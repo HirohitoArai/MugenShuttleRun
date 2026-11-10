@@ -3,11 +3,12 @@
 // 変換は再生中には行わず、開始前＋先読みで済ませてキャッシュする（要件定義 §3-1）。
 
 import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { toBlobURL, fetchFile } from '@ffmpeg/util';
-// @ffmpeg/ffmpeg のワーカースクリプト。Vite の ?url で実ファイルとして取り込む。
-import classWorkerURL from '@ffmpeg/ffmpeg/worker?url';
-
-const CORE_BASE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm';
+import { fetchFile } from '@ffmpeg/util';
+// core は CDN ではなく自前ホストする（@ffmpeg/core を依存に入れ、?url で実ファイルを同梱）。
+// 過去に CDN + ?url の worker 取り込みで load() が無言で固まる不具合があったため、
+// worker は @ffmpeg/ffmpeg 内部のバンドル済み worker に任せ、core/wasm だけを渡す。
+import coreURL from '@ffmpeg/core?url';
+import wasmURL from '@ffmpeg/core/wasm?url';
 
 let ffmpeg: FFmpeg | null = null;
 let loadPromise: Promise<boolean> | null = null;
@@ -38,11 +39,7 @@ export function ensureConverter(): Promise<boolean> {
       try {
         setStatus('loading');
         ffmpeg = new FFmpeg();
-        await ffmpeg.load({
-          classWorkerURL,
-          coreURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, 'text/javascript'),
-          wasmURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, 'application/wasm'),
-        });
+        await ffmpeg.load({ coreURL, wasmURL });
         setStatus('ready');
         return true;
       } catch (e) {
