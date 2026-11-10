@@ -20,17 +20,17 @@
   <body>
     <main class="sheet">
       <header class="head">
-        <h1 class="title">無限シャトルラン</h1>
-        <p class="subtitle">INFINITY SHUTLRUN</p>
+        <h1 class="title" id="titleText">無限シャトルラン</h1>
+        <p class="subtitle" id="subtitleText">INFINITY SHUTLRUN</p>
       </header>
 
       <!-- 設定画面 -->
       <section id="homePanel">
         <div class="panel">
-          <p class="panel-label">設定</p>
+          <p class="panel-label" id="lblSettings">設定</p>
 
           <div class="row">
-            <label for="modeSelect">モード</label>
+            <label for="modeSelect" id="lblMode">モード</label>
             <select id="modeSelect">
               <option value="normal" selected>普通モード</option>
               <option value="detail">詳細モード</option>
@@ -38,13 +38,13 @@
           </div>
 
           <div class="row">
-            <label for="toneSelect">音色</label>
+            <label for="toneSelect" id="lblTone">音色</label>
             <select id="toneSelect"></select>
           </div>
 
           <div id="detailInputs" hidden>
             <div class="row">
-              <label for="weightKg">体重</label>
+              <label for="weightKg" id="lblWeight">体重</label>
               <div class="slider-box">
                 <input id="weightKg" type="number" min="20" max="200" step="1" value="60" />
                 <span class="value">kg</span>
@@ -52,7 +52,7 @@
             </div>
 
             <div class="row">
-              <label for="initialSpeed">初期速度</label>
+              <label for="initialSpeed" id="lblInitSpeed">初期速度</label>
               <div class="slider-box">
                 <input id="initialSpeed" type="range" min="0" max="50" step="0.1" value="8" />
                 <span class="value"><span id="initialSpeedVal">8.0</span> km/h</span>
@@ -60,7 +60,7 @@
             </div>
 
             <div class="row">
-              <label for="speedRate">速度変化</label>
+              <label for="speedRate" id="lblSpeedRate">速度変化</label>
               <div class="slider-box">
                 <input id="speedRate" type="range" min="0" max="10" step="0.05" value="0.5" />
                 <span class="value"><span id="speedRateVal">0.50</span> km/h</span>
@@ -68,17 +68,17 @@
             </div>
 
             <div class="row">
-              <label for="levelInterval">レベルアップ時間</label>
+              <label for="levelInterval" id="lblLevelInterval">レベルアップ時間</label>
               <div class="slider-box">
                 <input id="levelInterval" type="range" min="0" max="600" step="1" value="60" />
-                <span class="value"><span id="levelIntervalVal">60</span> 秒</span>
+                <span class="value"><span id="levelIntervalVal">60</span> <span id="levelIntervalUnit">秒</span></span>
               </div>
             </div>
           </div>
         </div>
 
         <button id="startBtn" class="start-btn" type="button">スタート</button>
-        <p class="note">レベルが上がると効果音は速くなります。変換には ffmpeg（atempo）を使っています。</p>
+        <p class="note" id="startNote">レベルが上がると効果音は速くなります。変換には ffmpeg（atempo）を使っています。</p>
       </section>
 
       <!-- 実行画面 -->
@@ -88,7 +88,7 @@
         </div>
 
         <div class="rt-head">
-          <p class="rt-label">シャトル回数</p>
+          <p class="rt-label" id="lblShuttleCount">シャトル回数</p>
           <div class="big-counter" id="bigCount">0</div>
           <div class="track" aria-hidden="true">
             <div class="track-line"></div>
@@ -98,20 +98,20 @@
             <div class="track-marker" id="trackMarker"></div>
           </div>
           <div class="track-ends" aria-hidden="true"><span>0 m</span><span>20 m</span></div>
-          <p class="rt-caption">次の合図まで あと <span id="remainVal">9.00</span> 秒</p>
+          <p class="rt-caption"><span id="captionPre">次の合図まで あと </span><span id="remainVal">9.00</span><span id="captionPost"> 秒</span></p>
         </div>
 
         <div class="grid">
           <div class="cell">
-            <p class="cell-label">レベル</p>
+            <p class="cell-label" id="lblLevel">レベル</p>
             <p class="cell-value" id="levelVal">1</p>
           </div>
           <div class="cell rcol">
-            <p class="cell-label">走行速度 km/h</p>
+            <p class="cell-label" id="lblSpeed">走行速度 km/h</p>
             <p class="cell-value" id="speedVal">8.0</p>
           </div>
           <div class="cell">
-            <p class="cell-label">現在の音</p>
+            <p class="cell-label" id="lblNote">現在の音</p>
             <p class="cell-value" id="noteVal">ド</p>
           </div>
           <div class="cell rcol">
@@ -119,15 +119,15 @@
             <p class="cell-value" id="distanceVal">0.0</p>
           </div>
           <div class="cell detail-cell">
-            <p class="cell-label">1シャトル</p>
+            <p class="cell-label" id="lblShuttleTime">1シャトル</p>
             <p class="cell-value" id="shuttleTimeVal">9.00</p>
           </div>
           <div class="cell detail-cell rcol">
-            <p class="cell-label">ペース /km</p>
+            <p class="cell-label" id="lblPace">ペース /km</p>
             <p class="cell-value time" id="paceVal">7:30</p>
           </div>
           <div class="cell detail-cell">
-            <p class="cell-label">平均速度 km/h</p>
+            <p class="cell-label" id="lblAvgSpeed">平均速度 km/h</p>
             <p class="cell-value" id="avgSpeedVal">8.0</p>
           </div>
           <div class="cell detail-cell rcol">
@@ -135,15 +135,15 @@
             <p class="cell-value" id="calorieVal">0.00</p>
           </div>
           <div class="cell detail-cell">
-            <p class="cell-label">次のレベルまで</p>
+            <p class="cell-label" id="lblNextLevel">次のレベルまで</p>
             <p class="cell-value" id="nextLevelVal">60.00</p>
           </div>
           <div class="cell detail-cell rcol">
-            <p class="cell-label">残りシャトル数</p>
+            <p class="cell-label" id="lblNextShuttles">次のレベルまで あと</p>
             <p class="cell-value" id="nextLevelShuttlesVal">--</p>
           </div>
           <div class="cell wide">
-            <p class="cell-label">経過時間</p>
+            <p class="cell-label" id="lblElapsed">経過時間</p>
             <p class="cell-value" id="timeVal">0.00</p>
           </div>
         </div>
@@ -152,6 +152,7 @@
 
       <footer class="foot">
         <p id="engineStatus">変換エンジン: 準備中</p>
+        <p class="lang-switch"><button type="button" id="langJa" class="lang-btn">日本語</button> / <button type="button" id="langEn" class="lang-btn">English</button></p>
       </footer>
     </main>
     <script type="module" src="./src/main.ts"></script>

@@ -1,7 +1,8 @@
 import './style.css';
 import { Engine, TONE_SETS, type DisplayState } from './engine';
-import { ensureConverter, setLevelUpSource, onConverterStatus } from './convert';
-import { fmtDuration, fmtDurationFull, fmtDistance, fmtCalories } from './format';
+import { ensureConverter, setLevelUpSource, onConverterStatus, type ConverterStatus } from './convert';
+import { fmtDuration, fmtDurationFull, fmtDistance, fmtCalories, setFormatLang } from './format';
+import { STR, type Lang } from './i18n';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -56,16 +57,17 @@ applyMode();
 const NORMAL_PARAMS = { initialSpeed: 8.0, speedRate: 0.5, levelIntervalSec: 60 };
 let sessionWeightKg = 60;
 
-// 変換エンジンの状態表示
+// 表示言語（日本語 / English）。フッターの小さなボタンで切り替え、選択は保存する
+let lang: Lang = localStorage.getItem('mugen-lang') === 'en' ? 'en' : 'ja';
+
+// 変換エンジンの状態表示（言語切替で再描画できるよう状態を保持する）
+let convStatus: ConverterStatus = 'idle';
+function renderConvStatus(): void {
+  engineStatus.textContent = STR[lang].engine[convStatus];
+}
 onConverterStatus((s) => {
-  engineStatus.textContent =
-    s === 'ready'
-      ? '変換エンジン: 準備完了（ffmpeg / atempo）'
-      : s === 'loading'
-        ? '変換エンジン: 読み込み中…'
-        : s === 'error'
-          ? '変換エンジン: 利用できません（効果音は原音で再生します）'
-          : '変換エンジン: 準備中';
+  convStatus = s;
+  renderConvStatus();
 });
 
 // 起動時に変換エンジンと変換元音源を用意しておく
@@ -87,9 +89,54 @@ const trackMarker = $('trackMarker');
 const remainVal = $('remainVal');
 let lastDisplay: DisplayState | null = null;
 
-const NOTE_NAMES = ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ラ', 'シ', 'ド'];
 const distanceLabel = $('distanceLabel');
 const calorieLabel = $('calorieLabel');
+
+/** 言語を適用する: 静的なラベル類を全部差し替える（動的な値は次の描画で追随する） */
+function applyLang(l: Lang): void {
+  lang = l;
+  localStorage.setItem('mugen-lang', l);
+  setFormatLang(l);
+  document.documentElement.lang = l;
+  const s = STR[l];
+  $('titleText').textContent = s.title;
+  $('subtitleText').textContent = s.subtitle;
+  $('lblSettings').textContent = s.settings;
+  $('lblMode').textContent = s.mode;
+  modeSelect.options[0].textContent = s.modeNormal;
+  modeSelect.options[1].textContent = s.modeDetail;
+  $('lblTone').textContent = s.tone;
+  const toneOpt = toneSelect.querySelector<HTMLOptionElement>('option[value="default"]');
+  if (toneOpt) toneOpt.textContent = s.toneDefault;
+  $('lblWeight').textContent = s.weight;
+  $('lblInitSpeed').textContent = s.initSpeed;
+  $('lblSpeedRate').textContent = s.speedRate;
+  $('lblLevelInterval').textContent = s.levelInterval;
+  $('levelIntervalUnit').textContent = s.levelIntervalUnit;
+  $('startBtn').textContent = s.start;
+  $('startNote').textContent = s.startNote;
+  $('lblShuttleCount').textContent = s.shuttleCount;
+  $('captionPre').textContent = s.captionPre;
+  $('captionPost').textContent = s.captionPost;
+  $('lblLevel').textContent = s.level;
+  $('lblSpeed').textContent = s.speed;
+  $('lblNote').textContent = s.note;
+  $('lblShuttleTime').textContent = s.shuttleTime;
+  $('lblPace').textContent = s.pace;
+  $('lblAvgSpeed').textContent = s.avgSpeed;
+  $('lblNextLevel').textContent = s.nextLevel;
+  $('lblNextShuttles').textContent = s.nextShuttles;
+  $('lblElapsed').textContent = s.elapsed;
+  $('stopBtn').textContent = s.stop;
+  distanceLabel.textContent = `${s.distance} m`;
+  calorieLabel.textContent = `${s.calories} kcal`;
+  $('langJa').classList.toggle('active', l === 'ja');
+  $('langEn').classList.toggle('active', l === 'en');
+  renderConvStatus();
+}
+$('langJa').addEventListener('click', () => applyLang('ja'));
+$('langEn').addEventListener('click', () => applyLang('en'));
+applyLang(lang);
 
 // ---- 無限に増える数値の表示（単位を段階的に上げ、桁が伸び続けないようにする） ----
 // 整形ロジックは format.ts（単体テスト対象）
@@ -145,16 +192,16 @@ function renderRT(): void {
   remainVal.textContent = info.shuttleRemaining.toFixed(2);
 
   setFit(timeVal, fmtDurationFull(info.elapsed), 42);
-  noteVal.textContent = NOTE_NAMES[info.noteIndex] ?? 'ド';
+  noteVal.textContent = STR[lang].notes[info.noteIndex] ?? STR[lang].notes[0];
   setFit(shuttleTimeVal, fmtDuration(info.shuttleDuration), 42);
   setFit(nextLevelVal, fmtDuration(info.nextLevelInSec), 42);
-  setFit(nextLevelShuttlesVal, String(info.nextLevelShuttles), 42);
+  setFit(nextLevelShuttlesVal, lang === 'ja' ? `${info.nextLevelShuttles} 本` : String(info.nextLevelShuttles), 42);
   const dist = fmtDistance(info.distanceM);
   setFit(distanceVal, dist.text, 42);
-  distanceLabel.textContent = `総走行距離 ${dist.unit}`;
+  distanceLabel.textContent = `${STR[lang].distance} ${dist.unit}`;
   const cal = fmtCalories(1.05 * sessionWeightKg * (info.distanceM / 1000));
   setFit(calorieVal, cal.text, 42);
-  calorieLabel.textContent = `消費カロリー ${cal.unit}`;
+  calorieLabel.textContent = `${STR[lang].calories} ${cal.unit}`;
   setFit(avgSpeedVal, info.elapsed > 1 ? ((info.distanceM / info.elapsed) * 3.6).toFixed(1) : d.speed.toFixed(1), 42);
 }
 
@@ -194,16 +241,16 @@ $('startBtn').addEventListener('click', async () => {
   trackMarker.style.left = '0%';
   timeVal.dataset.t = '';
   setFit(timeVal, fmtDurationFull(0), 42);
-  noteVal.textContent = 'ド';
+  noteVal.textContent = STR[lang].notes[0];
   const shuttleSec = 72 / Math.max(params.initialSpeed, 0.1);
   setFit(shuttleTimeVal, fmtDuration(shuttleSec), 42);
   remainVal.textContent = shuttleSec.toFixed(2);
   setFit(nextLevelVal, '--', 42);
   setFit(nextLevelShuttlesVal, '--', 42);
   setFit(distanceVal, '0', 42);
-  distanceLabel.textContent = '総走行距離 m';
+  distanceLabel.textContent = `${STR[lang].distance} m`;
   setFit(calorieVal, '0', 42);
-  calorieLabel.textContent = '消費カロリー kcal';
+  calorieLabel.textContent = `${STR[lang].calories} kcal`;
   setFit(avgSpeedVal, params.initialSpeed.toFixed(1), 42);
   runPanel.classList.toggle('detail', isDetail());
   await engine.start(params, tone);

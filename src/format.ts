@@ -1,4 +1,10 @@
 // 無限に増える数値の整形。単位を段階的に上げて、桁が際限なく伸びないようにする。
+// 表示言語（i18n.ts の切替と連動）で単位の書き方が変わる。
+
+let formatLang: 'ja' | 'en' = 'ja';
+export function setFormatLang(l: 'ja' | 'en'): void {
+  formatLang = l;
+}
 
 export function fmtGrouped(x: number, dec: number): string {
   const [i, f] = x.toFixed(dec).split('.');
@@ -36,6 +42,29 @@ export function fmtMan(x: number): { text: string; suffix: string } {
  * 24時間未満は 時間＋分＋秒、365日未満は 日＋時間＋分、それ以上は 年＋日。
  */
 export function fmtDuration(sec: number): string {
+  if (formatLang === 'en') {
+    if (sec < 60) return `${sec.toFixed(2)}s`;
+    if (sec < 3600) {
+      const m = Math.floor(sec / 60);
+      const s = sec - m * 60;
+      return `${m}m ${s.toFixed(2).padStart(5, '0')}s`;
+    }
+    if (sec < 86400) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = Math.floor(sec % 60);
+      return `${h}h ${m}m ${s}s`;
+    }
+    if (sec < 86400 * 365) {
+      const d = Math.floor(sec / 86400);
+      const h = Math.floor((sec % 86400) / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      return `${d}d ${h}h ${m}m`;
+    }
+    const y = Math.floor(sec / (86400 * 365));
+    const d = Math.floor((sec % (86400 * 365)) / 86400);
+    return `${y}y ${d}d`;
+  }
   if (sec < 60) return `${sec.toFixed(2)}秒`;
   if (sec < 3600) {
     const m = Math.floor(sec / 60);
@@ -77,6 +106,13 @@ export function fmtDurationFull(sec: number): string {
   rest %= 6000;
   const seconds = `${String(Math.floor(rest / 100)).padStart(2, '0')}.${String(rest % 100).padStart(2, '0')}`;
 
+  if (formatLang === 'en') {
+    if (years > 0) return `${years}y ${days}d ${hours}h ${minutes}m ${seconds}s`;
+    if (days > 0) return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+    if (minutes > 0) return `${minutes}m ${seconds}s`;
+    return `${seconds}s`;
+  }
   if (years > 0) return `${years}年${days}日${hours}時間${minutes}分${seconds}秒`;
   if (days > 0) return `${days}日${hours}時間${minutes}分${seconds}秒`;
   if (hours > 0) return `${hours}時間${minutes}分${seconds}秒`;
@@ -84,15 +120,17 @@ export function fmtDurationFull(sec: number): string {
   return `${seconds}秒`;
 }
 
-/** 距離: m → km → 万km → 億km … */
+/** 距離: m → km → 万km → 億km …（English では万進法を使わず km で桁区切り） */
 export function fmtDistance(m: number): { text: string; unit: string } {
   if (m < 1000) return { text: m.toFixed(1), unit: 'm' };
+  if (formatLang === 'en') return { text: fmtScaled(m / 1000), unit: 'km' };
   const r = fmtMan(m / 1000);
   return { text: r.text, unit: `${r.suffix}km` };
 }
 
 /** カロリー: kcal → 万kcal → 億kcal …（ラベル用の単位も返す） */
 export function fmtCalories(kcal: number): { text: string; unit: string } {
+  if (formatLang === 'en') return { text: fmtScaled(kcal), unit: 'kcal' };
   const r = fmtMan(kcal);
   return { text: r.text, unit: `${r.suffix}kcal` };
 }
