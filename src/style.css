@@ -484,3 +484,61 @@ input[type='range']::-moz-range-thumb {
     display: none;
   }
 }
+
+/* 横長は「配信画面に映る」前提: 16:9 の1画面に広く大きく収める（v13） */
+@media (min-width: 900px) {
+  .sheet {
+    max-width: 1680px;
+    padding: 26px 40px 30px;
+  }
+  .head {
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+  }
+  .title {
+    font-size: 50px;
+  }
+  .big-counter {
+    font-size: 190px;
+  }
+  .rt-head {
+    padding: 18px 22px 14px;
+  }
+  .rt-label {
+    font-size: 15px;
+  }
+  .track {
+    height: 34px;
+    margin-top: 14px;
+  }
+  .track-marker {
+    width: 20px;
+    height: 20px;
+  }
+  .rt-caption {
+    font-size: 14px;
+  }
+  .rt-caption #remainVal {
+    font-size: 30px;
+  }
+  .cell {
+    padding: 24px 22px 20px;
+  }
+  .cell-label {
+    font-size: 14px;
+  }
+  .cell-value {
+    font-size: 60px;
+  }
+  .cell-value.time {
+    font-size: 42px;
+  }
+  /* 設定画面は横に広げすぎず中央に寄せる */
+  #homePanel .panel {
+    max-width: 1040px;
+    margin: 0 auto;
+  }
+  .count-overlay span {
+    font-size: 130px;
+  }
+}
