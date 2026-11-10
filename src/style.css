@@ -219,7 +219,64 @@ input[type='range']::-moz-range-thumb {
   border-right: none;
 }
 
-.cell:nth-last-child(-n + 2) {
+/* 詳細モード: 12セル（6行）の最終行だけ下線なし */
+#runPanel.detail .cell:nth-child(11),
+#runPanel.detail .cell:nth-child(12) {
+  border-bottom: none;
+}
+
+/* リアルタイム表示ヘッダー（巨大カウンター＋シェブロン） */
+.rt-head {
+  border: 2px solid var(--line);
+  background: #faf7ee;
+  padding: 14px 16px 10px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.big-counter {
+  font-family: 'keifont', sans-serif;
+  font-size: 96px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.big-counter .dim {
+  color: #cfc8b2;
+}
+
+.chevrons {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.chev {
+  width: 24px;
+  height: 28px;
+  background: #ddd6c0;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.chev.on {
+  background: var(--red);
+}
+
+.rt-caption {
+  font-size: 11px;
+  color: var(--faint);
+  letter-spacing: 0.14em;
+  margin: 9px 0 0;
+}
+
+/* 普通モード: 詳細セルを隠し、4セル（2行）の最終行の下線を消す */
+#runPanel:not(.detail) .detail-cell {
+  display: none;
+}
+
+#runPanel:not(.detail) .cell:nth-child(3),
+#runPanel:not(.detail) .cell:nth-child(4) {
   border-bottom: none;
 }
 

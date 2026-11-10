@@ -32,8 +32,8 @@
           <div class="row">
             <label for="modeSelect">モード</label>
             <select id="modeSelect">
-              <option value="normal" selected>普通のシャトルラン</option>
-              <option value="custom">カスタム</option>
+              <option value="normal" selected>普通モード</option>
+              <option value="detail">詳細モード</option>
             </select>
           </div>
 
@@ -42,15 +42,21 @@
             <select id="toneSelect"></select>
           </div>
 
-          <div class="row">
-            <label for="weightKg">体重</label>
-            <div class="slider-box">
-              <input id="weightKg" type="number" min="20" max="200" step="1" value="60" />
-              <span class="value">kg</span>
+          <div id="detailInputs" hidden>
+            <div class="row">
+              <label for="weightKg">体重</label>
+              <div class="slider-box">
+                <input id="weightKg" type="number" min="20" max="200" step="1" value="60" />
+                <span class="value">kg</span>
+              </div>
             </div>
-          </div>
-
-          <div id="sliderRows" hidden>
+            <div class="row">
+              <label for="ageYears">年齢</label>
+              <div class="slider-box">
+                <input id="ageYears" type="number" min="5" max="99" step="1" value="20" />
+                <span class="value">歳</span>
+              </div>
+            </div>
             <div class="row">
               <label for="initialSpeed">初期速度</label>
               <div class="slider-box">
@@ -86,6 +92,13 @@
         <div id="countOverlay" class="count-overlay" hidden>
           <span id="countNum">5</span>
         </div>
+
+        <div class="rt-head">
+          <div class="big-counter"><span class="dim" id="bcDim">00</span><span id="bcMain">0</span></div>
+          <div class="chevrons" id="chevrons" aria-hidden="true"></div>
+          <p class="rt-caption">完了シャトル数 ／ 現在のシャトルの残り</p>
+        </div>
+
         <div class="grid">
           <div class="cell">
             <p class="cell-label">レベル</p>
@@ -101,23 +114,39 @@
           </div>
           <div class="cell">
             <p class="cell-label">総走行時間</p>
-            <p class="cell-value time" id="timeVal">00:00:00</p>
+            <p class="cell-value time" id="timeVal">00:00.00</p>
           </div>
-          <div class="cell">
+          <div class="cell detail-cell">
             <p class="cell-label">シャトル時間 秒</p>
             <p class="cell-value" id="shuttleTimeVal">9.00</p>
           </div>
-          <div class="cell">
+          <div class="cell detail-cell">
+            <p class="cell-label">次のレベルまで 秒</p>
+            <p class="cell-value" id="nextLevelVal">60.00</p>
+          </div>
+          <div class="cell detail-cell">
+            <p class="cell-label">次のレベルまで シャトル</p>
+            <p class="cell-value" id="nextLevelShuttlesVal">7</p>
+          </div>
+          <div class="cell detail-cell">
             <p class="cell-label">ペース /km</p>
             <p class="cell-value time" id="paceVal">7:30</p>
           </div>
-          <div class="cell">
+          <div class="cell detail-cell">
             <p class="cell-label">総走行距離 m</p>
-            <p class="cell-value" id="distanceVal">0</p>
+            <p class="cell-value" id="distanceVal">0.0</p>
           </div>
-          <div class="cell">
+          <div class="cell detail-cell">
             <p class="cell-label">消費カロリー kcal</p>
-            <p class="cell-value" id="calorieVal">0</p>
+            <p class="cell-value" id="calorieVal">0.00</p>
+          </div>
+          <div class="cell detail-cell">
+            <p class="cell-label">METs</p>
+            <p class="cell-value" id="metsVal">8.62</p>
+          </div>
+          <div class="cell detail-cell">
+            <p class="cell-label">最大酸素摂取量 ml/kg/分</p>
+            <p class="cell-value" id="vo2Val">16.55</p>
           </div>
         </div>
         <button id="stopBtn" class="stop-btn" type="button">ストップ</button>

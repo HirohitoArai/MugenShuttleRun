@@ -232,6 +232,105 @@ export class Engine {
     }
   }
 
+  // ---- リアルタイム表示用（動画形式の表示に倣い、フレーム単位で読む） ----
+  now(): number {
+    return this.ctx ? this.ctx.currentTime : 0;
+  }
+
+  /**
+   * 現在時刻時点のライブ状態を返す。イベント列（生成済み）から正確に求める。
+   * 戻り値が null の間は未開始。countdown 中は elapsed 等が 0 側に張り付く。
+   */
+  liveInfo(): {
+    elapsed: number;
+    completed: number;
+    shuttleIndex: number;
+    shuttleDuration: number;
+    shuttleRemaining: number;
+    distanceM: number;
+    nextLevelInSec: number | null;
+    nextLevelShuttles: number | null;
+  } | null {
+    if (!this.ctx || this.display.phase === 'idle') return null;
+    const now = this.ctx.currentTime;
+    const elapsed = Math.max(0, now - this.runStartTime);
+
+    // 現在のフェイズ（シャトル）の開始と終了をイベント列から探す
+    let phaseStart = this.runStartTime;
+    let completed = 0;
+    let phaseEnd: number | null = null;
+    for (const ev of this.events) {
+      if (ev.kind !== 'wrap') continue;
+      if (ev.time <= now) {
+        phaseStart = ev.time;
+        completed = ev.shuttlesAfter ?? completed;
+      } else {
+        phaseEnd = ev.time;
+        break;
+      }
+    }
+    if (phaseEnd === null) {
+      // 次の wrap が未生成なら、必要分だけ先行生成する
+      for (let i = 0; i < 600 && phaseEnd === null; i++) {
+        this.genPhase();
+        const last = this.events[this.events.length - 1];
+        if (last && last.time > now) phaseEnd = last.time;
+      }
+    }
+    if (phaseEnd === null) return null;
+    const duration = Math.max(phaseEnd - phaseStart, 0.001);
+    const remaining = Math.max(phaseEnd - now, 0);
+    const progress = Math.min(Math.max((now - phaseStart) / duration, 0), 1);
+    const distanceM = completed * 20 + progress * 20;
+
+    // 次のレベルアップ（leveledUp な wrap）を探す
+    let nextLevelInSec: number | null = null;
+    let nextLevelShuttles: number | null = null;
+    {
+      let wraps = 0;
+      let found: number | null = null;
+      for (const ev of this.events) {
+        if (ev.kind !== 'wrap' || ev.time <= now) continue;
+        wraps++;
+        if (ev.leveledUp) {
+          found = ev.time;
+          break;
+        }
+      }
+      if (found === null) {
+        // 未生成の先にレベルアップがあるはずなので、少し先まで生成して再探索する
+        for (let i = 0; i < 600 && found === null; i++) {
+          const before = this.events.length;
+          this.genPhase();
+          for (let j = before; j < this.events.length; j++) {
+            const ev = this.events[j];
+            if (ev.kind !== 'wrap' || ev.time <= now) continue;
+            wraps++;
+            if (ev.leveledUp) {
+              found = ev.time;
+              break;
+            }
+          }
+        }
+      }
+      if (found !== null) {
+        nextLevelInSec = Math.max(found - now, 0);
+        nextLevelShuttles = wraps;
+      }
+    }
+
+    return {
+      elapsed,
+      completed,
+      shuttleIndex: completed + 1,
+      shuttleDuration: duration,
+      shuttleRemaining: remaining,
+      distanceM,
+      nextLevelInSec,
+      nextLevelShuttles,
+    };
+  }
+
   async start(params: RunParams, tone: ToneSet): Promise<void> {
     this.stopInternal();
     this.params = params;
