@@ -1,6 +1,7 @@
 import './style.css';
 import { Engine, TONE_SETS, type DisplayState } from './engine';
 import { ensureConverter, setLevelUpSource, onConverterStatus } from './convert';
+import { fmtDuration, fmtDistance, fmtCalories } from './format';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -96,33 +97,13 @@ let lastDisplay: DisplayState | null = null;
 
 const NOTE_NAMES = ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ラ', 'シ', 'ド'];
 const distanceLabel = $('distanceLabel');
+const timeLabel = $('timeLabel');
+const shuttleTimeLabel = $('shuttleTimeLabel');
+const calorieLabel = $('calorieLabel');
+const nextLevelLabel = $('nextLevelLabel');
 
-// ---- 無限に増える数値の表示（桁が増えても崩れないようにする） ----
-function fmtGrouped(x: number, dec: number): string {
-  const [i, f] = x.toFixed(dec).split('.');
-  const grouped = Number(i).toLocaleString('en-US');
-  return f ? `${grouped}.${f}` : grouped;
-}
-
-function fmtElapsed(sec: number): string {
-  if (sec < 600) return fmtGrouped(sec, 2);
-  if (sec < 86400) return fmtGrouped(sec, 1);
-  return fmtGrouped(sec, 0);
-}
-
-function fmtDistance(m: number): { text: string; unit: 'm' | 'km' } {
-  if (m < 1000) return { text: m.toFixed(1), unit: 'm' };
-  const km = m / 1000;
-  if (km < 100) return { text: km.toFixed(2), unit: 'km' };
-  if (km < 10000) return { text: fmtGrouped(km, 1), unit: 'km' };
-  return { text: fmtGrouped(km, 0), unit: 'km' };
-}
-
-function fmtCalories(kcal: number): string {
-  if (kcal < 100) return kcal.toFixed(2);
-  if (kcal < 10000) return fmtGrouped(kcal, 1);
-  return fmtGrouped(kcal, 0);
-}
+// ---- 無限に増える数値の表示（単位を段階的に上げ、桁が伸び続けないようにする） ----
+// 整形ロジックは format.ts（単体テスト対象）
 
 // 表示幅に合わせてフォントを自動で縮める（テキストが変わった時だけ測る）
 function setFit(el: HTMLElement, text: string, maxPx: number): void {
@@ -159,14 +140,26 @@ function renderRT(): void {
   trackMarker.style.left = `${(pos * 100).toFixed(2)}%`;
   remainVal.textContent = info.shuttleRemaining.toFixed(2);
 
-  setFit(timeVal, fmtElapsed(info.elapsed), 42);
+  const elapsed = fmtDuration(info.elapsed);
+  setFit(timeVal, elapsed.text, 42);
+  timeLabel.textContent = `経過時間 ${elapsed.unit}`;
   noteVal.textContent = NOTE_NAMES[info.noteIndex] ?? 'ド';
-  setFit(shuttleTimeVal, info.shuttleDuration.toFixed(2), 42);
-  setFit(nextLevelVal, info.nextLevelInSec !== null ? fmtGrouped(info.nextLevelInSec, 2) : '--', 42);
+  const shuttleDur = fmtDuration(info.shuttleDuration);
+  setFit(shuttleTimeVal, shuttleDur.text, 42);
+  shuttleTimeLabel.textContent = `1シャトル ${shuttleDur.unit}`;
+  if (info.nextLevelInSec !== null) {
+    const nl = fmtDuration(info.nextLevelInSec);
+    setFit(nextLevelVal, nl.text, 42);
+    nextLevelLabel.textContent = `次のレベルまで ${nl.unit}`;
+  } else {
+    setFit(nextLevelVal, '--', 42);
+  }
   const dist = fmtDistance(info.distanceM);
   setFit(distanceVal, dist.text, 42);
   distanceLabel.textContent = `総走行距離 ${dist.unit}`;
-  setFit(calorieVal, fmtCalories(1.05 * sessionWeightKg * (info.distanceM / 1000)), 42);
+  const cal = fmtCalories(1.05 * sessionWeightKg * (info.distanceM / 1000));
+  setFit(calorieVal, cal.text, 42);
+  calorieLabel.textContent = `消費カロリー ${cal.unit}`;
   setFit(avgSpeedVal, info.elapsed > 1 ? ((info.distanceM / info.elapsed) * 3.6).toFixed(1) : d.speed.toFixed(1), 42);
 }
 
