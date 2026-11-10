@@ -226,7 +226,7 @@ input[type='range']::-moz-range-thumb {
   grid-column: 1 / -1;
 }
 
-/* 詳細モード: 最終行（次のレベルまで）の下線なし */
+/* 詳細モード: 最終行（経過時間）の下線なし */
 #runPanel.detail .cell:nth-child(10) {
   border-bottom: none;
 }
@@ -319,7 +319,7 @@ input[type='range']::-moz-range-thumb {
   display: none;
 }
 
-#runPanel:not(.detail) .cell:nth-child(4) {
+#runPanel:not(.detail) .cell:nth-child(10) {
   border-bottom: none;
 }
 
