@@ -467,9 +467,20 @@ input[type='range']::-moz-range-thumb {
   }
 }
 
-/* 横長レイアウトで display を付け替えた要素でも、hidden の画面は必ず隠す */
+/* 横長レイアウトで display を付け替えた要素でも、hidden の画面は必ず隠す
+   （ID セレクタの display 指定に勝てるよう、こちらも ID + 属性で指定する） */
 @media (min-width: 900px) {
   section[hidden] {
+    display: none;
+  }
+  #runPanel[hidden] {
+    display: none;
+  }
+  /* 詳細入力はラッパー div を透過させて、行そのものを2列グリッドに流し込む */
+  .panel #detailInputs {
+    display: contents;
+  }
+  .panel #detailInputs[hidden] {
     display: none;
   }
 }
