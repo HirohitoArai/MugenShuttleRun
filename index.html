@@ -16,8 +16,8 @@
         font-display: swap;
       }
     </style>
-    <script type="module" crossorigin src="./assets/index-Ddkt40qe.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DE-yVu0N.css">
+    <script type="module" crossorigin src="./assets/index-CXRtqUAG.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BINvOMlC.css">
   </head>
   <body>
     <main class="sheet">
@@ -32,31 +32,49 @@
           <p class="panel-label">設定</p>
 
           <div class="row">
+            <label for="modeSelect">モード</label>
+            <select id="modeSelect">
+              <option value="normal" selected>普通のシャトルラン</option>
+              <option value="custom">カスタム</option>
+            </select>
+          </div>
+
+          <div class="row">
             <label for="toneSelect">音色</label>
             <select id="toneSelect"></select>
           </div>
 
           <div class="row">
-            <label for="initialSpeed">初期速度</label>
+            <label for="weightKg">体重</label>
             <div class="slider-box">
-              <input id="initialSpeed" type="range" min="0" max="50" step="0.1" value="8" />
-              <span class="value"><span id="initialSpeedVal">8.0</span> km/h</span>
+              <input id="weightKg" type="number" min="20" max="200" step="1" value="60" />
+              <span class="value">kg</span>
             </div>
           </div>
 
-          <div class="row">
-            <label for="speedRate">速度変化</label>
-            <div class="slider-box">
-              <input id="speedRate" type="range" min="0" max="10" step="0.05" value="0.5" />
-              <span class="value"><span id="speedRateVal">0.50</span> km/h</span>
+          <div id="sliderRows" hidden>
+            <div class="row">
+              <label for="initialSpeed">初期速度</label>
+              <div class="slider-box">
+                <input id="initialSpeed" type="range" min="0" max="50" step="0.1" value="8" />
+                <span class="value"><span id="initialSpeedVal">8.0</span> km/h</span>
+              </div>
             </div>
-          </div>
 
-          <div class="row">
-            <label for="levelInterval">レベルアップ時間</label>
-            <div class="slider-box">
-              <input id="levelInterval" type="range" min="0" max="600" step="1" value="60" />
-              <span class="value"><span id="levelIntervalVal">60</span> 秒</span>
+            <div class="row">
+              <label for="speedRate">速度変化</label>
+              <div class="slider-box">
+                <input id="speedRate" type="range" min="0" max="10" step="0.05" value="0.5" />
+                <span class="value"><span id="speedRateVal">0.50</span> km/h</span>
+              </div>
+            </div>
+
+            <div class="row">
+              <label for="levelInterval">レベルアップ時間</label>
+              <div class="slider-box">
+                <input id="levelInterval" type="range" min="0" max="600" step="1" value="60" />
+                <span class="value"><span id="levelIntervalVal">60</span> 秒</span>
+              </div>
             </div>
           </div>
         </div>
@@ -86,6 +104,22 @@
           <div class="cell">
             <p class="cell-label">総走行時間</p>
             <p class="cell-value time" id="timeVal">00:00:00</p>
+          </div>
+          <div class="cell">
+            <p class="cell-label">シャトル時間 秒</p>
+            <p class="cell-value" id="shuttleTimeVal">9.00</p>
+          </div>
+          <div class="cell">
+            <p class="cell-label">ペース /km</p>
+            <p class="cell-value time" id="paceVal">7:30</p>
+          </div>
+          <div class="cell">
+            <p class="cell-label">総走行距離 m</p>
+            <p class="cell-value" id="distanceVal">0</p>
+          </div>
+          <div class="cell">
+            <p class="cell-label">消費カロリー kcal</p>
+            <p class="cell-value" id="calorieVal">0</p>
           </div>
         </div>
         <button id="stopBtn" class="stop-btn" type="button">ストップ</button>
