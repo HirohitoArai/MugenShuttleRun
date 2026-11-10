@@ -99,6 +99,7 @@ function applyLang(l: Lang): void {
   setFormatLang(l);
   document.documentElement.lang = l;
   const s = STR[l];
+  document.title = s.title;
   $('titleText').textContent = s.title;
   $('subtitleText').textContent = s.subtitle;
   $('lblSettings').textContent = s.settings;
