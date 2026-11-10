@@ -95,17 +95,52 @@ const remainVal = $('remainVal');
 let lastDisplay: DisplayState | null = null;
 
 const NOTE_NAMES = ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ラ', 'シ', 'ド'];
+const distanceLabel = $('distanceLabel');
 
-// カウンターは「無限」が前提: 20桁でも収まるよう、桁数で文字を自動で縮める
-let lastCountText = '';
+// ---- 無限に増える数値の表示（桁が増えても崩れないようにする） ----
+function fmtGrouped(x: number, dec: number): string {
+  const [i, f] = x.toFixed(dec).split('.');
+  const grouped = Number(i).toLocaleString('en-US');
+  return f ? `${grouped}.${f}` : grouped;
+}
+
+function fmtElapsed(sec: number): string {
+  if (sec < 600) return fmtGrouped(sec, 2);
+  if (sec < 86400) return fmtGrouped(sec, 1);
+  return fmtGrouped(sec, 0);
+}
+
+function fmtDistance(m: number): { text: string; unit: 'm' | 'km' } {
+  if (m < 1000) return { text: m.toFixed(1), unit: 'm' };
+  const km = m / 1000;
+  if (km < 100) return { text: km.toFixed(2), unit: 'km' };
+  if (km < 10000) return { text: fmtGrouped(km, 1), unit: 'km' };
+  return { text: fmtGrouped(km, 0), unit: 'km' };
+}
+
+function fmtCalories(kcal: number): string {
+  if (kcal < 100) return kcal.toFixed(2);
+  if (kcal < 10000) return fmtGrouped(kcal, 1);
+  return fmtGrouped(kcal, 0);
+}
+
+// 表示幅に合わせてフォントを自動で縮める（テキストが変わった時だけ測る）
+function setFit(el: HTMLElement, text: string, maxPx: number): void {
+  if (el.dataset.t === text) return;
+  el.dataset.t = text;
+  el.textContent = text;
+  el.style.fontSize = `${maxPx}px`;
+  const avail = (el.parentElement?.clientWidth ?? 260) - 20;
+  if (avail <= 40) return; // 非表示中は測れないので最大サイズのままにする
+  const w = el.scrollWidth;
+  if (w > avail && w > 0) {
+    el.style.fontSize = `${Math.max(13, Math.floor((maxPx * avail) / w))}px`;
+  }
+}
+
+// カウンターは「無限」が前提: 20桁でも収まるよう自動で縮める
 function renderCount(n: number): void {
-  const text = n.toLocaleString('en-US');
-  if (text === lastCountText) return;
-  lastCountText = text;
-  bigCount.textContent = text;
-  const digits = String(n).length;
-  const size = Math.min(92, Math.max(15, Math.floor(600 / Math.max(digits, 1))));
-  bigCount.style.fontSize = `${size}px`;
+  setFit(bigCount, n.toLocaleString('en-US'), 92);
 }
 
 // フレーム単位のリアルタイム描画
@@ -124,13 +159,15 @@ function renderRT(): void {
   trackMarker.style.left = `${(pos * 100).toFixed(2)}%`;
   remainVal.textContent = info.shuttleRemaining.toFixed(2);
 
-  timeVal.textContent = info.elapsed.toFixed(2);
+  setFit(timeVal, fmtElapsed(info.elapsed), 42);
   noteVal.textContent = NOTE_NAMES[info.noteIndex] ?? 'ド';
-  shuttleTimeVal.textContent = info.shuttleDuration.toFixed(2);
-  nextLevelVal.textContent = info.nextLevelInSec !== null ? info.nextLevelInSec.toFixed(2) : '--';
-  distanceVal.textContent = info.distanceM.toFixed(1);
-  calorieVal.textContent = (1.05 * sessionWeightKg * (info.distanceM / 1000)).toFixed(2);
-  avgSpeedVal.textContent = info.elapsed > 1 ? ((info.distanceM / info.elapsed) * 3.6).toFixed(1) : d.speed.toFixed(1);
+  setFit(shuttleTimeVal, info.shuttleDuration.toFixed(2), 42);
+  setFit(nextLevelVal, info.nextLevelInSec !== null ? fmtGrouped(info.nextLevelInSec, 2) : '--', 42);
+  const dist = fmtDistance(info.distanceM);
+  setFit(distanceVal, dist.text, 42);
+  distanceLabel.textContent = `総走行距離 ${dist.unit}`;
+  setFit(calorieVal, fmtCalories(1.05 * sessionWeightKg * (info.distanceM / 1000)), 42);
+  setFit(avgSpeedVal, info.elapsed > 1 ? ((info.distanceM / info.elapsed) * 3.6).toFixed(1) : d.speed.toFixed(1), 42);
 }
 
 engine.onDisplay = (d: DisplayState) => {
@@ -145,22 +182,22 @@ engine.onDisplay = (d: DisplayState) => {
   runPanel.hidden = false;
   countOverlay.hidden = d.phase !== 'countdown';
   countNum.textContent = String(d.count);
-  levelVal.textContent = String(d.level);
-  speedVal.textContent = d.speed.toFixed(1);
+  setFit(levelVal, String(d.level), 42);
+  setFit(speedVal, d.speed.toFixed(1), 42);
   const speed = Math.max(d.speed, 0.1);
   const paceSec = 3600 / speed;
-  paceVal.textContent = `${Math.floor(paceSec / 60)}:${String(Math.floor(paceSec % 60)).padStart(2, '0')}`;
+  setFit(paceVal, `${Math.floor(paceSec / 60)}:${String(Math.floor(paceSec % 60)).padStart(2, '0')}`, 30);
 };
 
 $('startBtn').addEventListener('click', async () => {
   const tone = TONE_SETS.find((t) => t.id === toneSelect.value) ?? defaultTone;
   await setLevelUpSource(tone.levelup).catch(() => undefined);
   sessionWeightKg = Math.min(200, Math.max(20, parseFloat(weightKg.value) || 60));
-  lastCountText = '';
-  bigCount.textContent = '0';
-  bigCount.style.fontSize = '92px';
+  bigCount.dataset.t = '';
+  renderCount(0);
   trackMarker.style.left = '0%';
-  timeVal.textContent = '0.00';
+  timeVal.dataset.t = '';
+  setFit(timeVal, '0.00', 42);
   noteVal.textContent = 'ド';
   const params = !isDetail()
     ? { ...NORMAL_PARAMS }
