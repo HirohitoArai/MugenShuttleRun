@@ -1,7 +1,7 @@
 import './style.css';
 import { Engine, TONE_SETS, type DisplayState } from './engine';
 import { ensureConverter, setLevelUpSource, onConverterStatus } from './convert';
-import { fmtDuration, fmtDistance, fmtCalories } from './format';
+import { fmtDuration, fmtDurationFull, fmtDistance, fmtCalories } from './format';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -143,7 +143,7 @@ function renderRT(): void {
   trackMarker.style.left = `${(pos * 100).toFixed(2)}%`;
   remainVal.textContent = info.shuttleRemaining.toFixed(2);
 
-  setFit(timeVal, fmtDuration(info.elapsed), 42);
+  setFit(timeVal, fmtDurationFull(info.elapsed), 42);
   noteVal.textContent = NOTE_NAMES[info.noteIndex] ?? 'ド';
   setFit(shuttleTimeVal, fmtDuration(info.shuttleDuration), 42);
   setFit(nextLevelVal, fmtDuration(info.nextLevelInSec), 42);
@@ -191,7 +191,7 @@ $('startBtn').addEventListener('click', async () => {
   renderCount(0);
   trackMarker.style.left = '0%';
   timeVal.dataset.t = '';
-  setFit(timeVal, '0.00秒', 42);
+  setFit(timeVal, fmtDurationFull(0), 42);
   noteVal.textContent = 'ド';
   const shuttleSec = 72 / Math.max(params.initialSpeed, 0.1);
   setFit(shuttleTimeVal, fmtDuration(shuttleSec), 42);

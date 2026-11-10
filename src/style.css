@@ -215,12 +215,18 @@ input[type='range']::-moz-range-thumb {
   border-bottom: 1px solid #d8d2c0;
 }
 
-.cell:nth-child(2n) {
+/* 右列のセル（横幅いっぱいのセルも含む）は右の区切り線なし */
+.cell.rcol,
+.cell.wide {
   border-right: none;
 }
 
-/* 詳細モード: 10セル（5行）の最終行だけ下線なし */
-#runPanel.detail .cell:nth-child(9),
+/* 経過時間は横幅いっぱいの1行を使う */
+.cell.wide {
+  grid-column: 1 / -1;
+}
+
+/* 詳細モード: 最終行（次のレベルまで）の下線なし */
 #runPanel.detail .cell:nth-child(10) {
   border-bottom: none;
 }
@@ -308,12 +314,11 @@ input[type='range']::-moz-range-thumb {
   color: var(--ink);
 }
 
-/* 普通モード: 詳細セルを隠し、4セル（2行）の最終行の下線を消す */
+/* 普通モード: 詳細セルを隠し、最終行（現在の音）の下線を消す */
 #runPanel:not(.detail) .detail-cell {
   display: none;
 }
 
-#runPanel:not(.detail) .cell:nth-child(3),
 #runPanel:not(.detail) .cell:nth-child(4) {
   border-bottom: none;
 }
