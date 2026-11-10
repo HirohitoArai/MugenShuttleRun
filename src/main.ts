@@ -185,6 +185,8 @@ $('startBtn').addEventListener('click', async () => {
   lastChevKey = '';
   bcDim.textContent = '00';
   bcMain.textContent = '0';
+  timeVal.textContent = '00:00.00';
+  chevSpans.forEach((s) => s.classList.remove('on'));
   const params = !isDetail()
     ? { ...NORMAL_PARAMS }
     : {
