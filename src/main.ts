@@ -178,7 +178,19 @@ $('startBtn').addEventListener('click', async () => {
 $('stopBtn').addEventListener('click', () => engine.stop());
 
 if ('serviceWorker' in navigator) {
+  // 新しい SW に切り替わったら自動で1回だけ再読み込みし、古い画面が残らないようにする
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController && !reloading) {
+      reloading = true;
+      location.reload();
+    }
+  });
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => undefined);
+    navigator.serviceWorker
+      .register('./sw.js')
+      .then((reg) => reg.update())
+      .catch(() => undefined);
   });
 }
