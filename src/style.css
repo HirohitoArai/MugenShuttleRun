@@ -409,3 +409,67 @@ input[type='range']::-moz-range-thumb {
   font-weight: 700;
   text-decoration: none;
 }
+
+/* 横長画面（PC）向けレイアウト。縦向き（〜899px）は従来どおりで一切変えない */
+@media (min-width: 900px) {
+  .sheet {
+    max-width: 1160px;
+    padding: 36px 32px 48px;
+  }
+  .title {
+    font-size: 56px;
+  }
+
+  /* 設定パネル: 項目を2列に並べる */
+  .panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 32px;
+    padding: 22px 22px 12px;
+  }
+  .panel .row {
+    border-bottom: none;
+  }
+  .start-btn {
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .note {
+    text-align: center;
+  }
+
+  /* 実行画面: 左にカウンター＋トラック、右に記録グリッド */
+  #runPanel {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    column-gap: 20px;
+    align-items: start;
+  }
+  #runPanel .count-overlay {
+    grid-column: 1 / -1;
+  }
+  #runPanel .rt-head {
+    grid-column: 1;
+    margin-bottom: 0;
+  }
+  #runPanel .grid {
+    grid-column: 2;
+  }
+  #runPanel .stop-btn {
+    grid-column: 1;
+  }
+  .big-counter {
+    font-size: 118px;
+  }
+  .cell {
+    padding: 20px 18px 16px;
+  }
+}
+
+/* 横長レイアウトで display を付け替えた要素でも、hidden の画面は必ず隠す */
+@media (min-width: 900px) {
+  section[hidden] {
+    display: none;
+  }
+}
