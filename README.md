@@ -1,4 +1,4 @@
-# 無限シャトルラン (Mugen Shuttle Run)
+# 無限シャトルラン (INFINITY SHUTLRUN)
 
 音階（ドレミ）で進むシャトルランの Web アプリ。Unity 版「FakeShuttleRun」の移行版。
 
