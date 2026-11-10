@@ -60,10 +60,10 @@ export function fmtDuration(sec: number): string {
 }
 
 /**
- * 経過時間専用の全桁表示。既定の項は「時間・分・秒」の3項で、1時間未満でも
- * 「0時間1分33.62秒」のように時間の項を出す。日・年は桁が上がったら上に足す。
+ * 経過時間専用の全桁表示。最大の単位から秒まで全ての項を出すが、
+ * 0の上位項は書かない（「0時間0分14.78秒」ではなく「14.78秒」）。
  * 秒はどれだけ長くなっても必ず小数2桁まで表示する。
- * 100分の1秒単位で丸めてから分解するので、59.999秒は「0時間1分00.00秒」と繰り上がる。
+ * 100分の1秒単位で丸めてから分解するので、59.999秒は「1分00.00秒」と繰り上がる。
  */
 export function fmtDurationFull(sec: number): string {
   let rest = Math.round(Math.max(0, sec) * 100); // 100分の1秒単位
@@ -77,10 +77,11 @@ export function fmtDurationFull(sec: number): string {
   rest %= 6000;
   const seconds = `${String(Math.floor(rest / 100)).padStart(2, '0')}.${String(rest % 100).padStart(2, '0')}`;
 
-  const tail = `${hours}時間${minutes}分${seconds}秒`;
-  if (years > 0) return `${years}年${days}日${tail}`;
-  if (days > 0) return `${days}日${tail}`;
-  return tail;
+  if (years > 0) return `${years}年${days}日${hours}時間${minutes}分${seconds}秒`;
+  if (days > 0) return `${days}日${hours}時間${minutes}分${seconds}秒`;
+  if (hours > 0) return `${hours}時間${minutes}分${seconds}秒`;
+  if (minutes > 0) return `${minutes}分${seconds}秒`;
+  return `${seconds}秒`;
 }
 
 /** 距離: m → km → 万km → 億km … */
