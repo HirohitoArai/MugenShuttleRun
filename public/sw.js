@@ -1,6 +1,6 @@
 // 無限シャトルラン Service Worker: 一度取得した資源はキャッシュから返し、
-// 初回ロード後はオフラインでも起動できるようにする（ffmpeg core の CDN 取得分も含む）。
-const CACHE = 'mugen-shuttle-run-v2';
+// 初回ロード後はオフラインでも起動できるようにする。
+const CACHE = 'mugen-shuttle-run-v3';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
