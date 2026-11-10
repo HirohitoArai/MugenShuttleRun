@@ -113,5 +113,11 @@ export function convertLevelUp(tempo: number): Promise<ArrayBuffer | null> {
   });
   queue = job.catch(() => undefined);
   cache.set(key, job);
+  // 長時間運転用: 変換キャッシュは直近分だけ残す（際限なく溜めない）
+  while (cache.size > 24) {
+    const oldest = cache.keys().next().value;
+    if (oldest === undefined) break;
+    cache.delete(oldest);
+  }
   return job;
 }

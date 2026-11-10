@@ -46,7 +46,7 @@ interface Ev {
   leveledUp?: boolean;
 }
 
-const HORIZON = 0.25; // 秒: この先まで音を予約する
+const HORIZON = 1.5; // 秒: この先まで音を予約する（配信などで画面が裏に回っても途切れないよう長め）
 const TICK_MS = 25;
 
 export class Engine {
@@ -107,6 +107,10 @@ export class Engine {
         if (!buf || !this.ctx) return;
         const audio = await this.ctx.decodeAudioData(buf);
         this.levelBufs.set(level, audio);
+        // 長時間運転用: 古いレベルの変換済み音は捨てる（際限なく溜めない）
+        for (const k of this.levelBufs.keys()) {
+          if (k < level - 6) this.levelBufs.delete(k);
+        }
       })
       .catch(() => undefined)
       .finally(() => this.converting.delete(level));
@@ -186,6 +190,22 @@ export class Engine {
       changed = true;
     }
     if (changed) this.emit();
+    // 過去イベントの破棄（長時間運転で配列が際限なく伸びないように）。
+    // 表示とリアルタイム計算に必要なのは「最後に通過した wrap」以降だけ。
+    if (this.evPtr > 512) {
+      let cut = 0;
+      for (let i = this.evPtr - 1; i >= 0; i--) {
+        if (this.events[i].kind === 'wrap') {
+          cut = i;
+          break;
+        }
+      }
+      if (cut > 0) {
+        this.events.splice(0, cut);
+        this.evPtr -= cut;
+        this.schedPtr -= cut;
+      }
+    }
   }
 
   private scheduleEventAudio(ev: Ev): void {
@@ -273,7 +293,7 @@ export class Engine {
     }
     if (phaseEnd === null) {
       // 次の wrap が未生成なら、必要分だけ先行生成する
-      for (let i = 0; i < 600 && phaseEnd === null; i++) {
+      for (let i = 0; i < 3000 && phaseEnd === null; i++) {
         this.genPhase();
         const last = this.events[this.events.length - 1];
         if (last && last.time > now) phaseEnd = last.time;
@@ -308,7 +328,7 @@ export class Engine {
       }
       if (found === null) {
         // 未生成の先にレベルアップがあるはずなので、少し先まで生成して再探索する
-        for (let i = 0; i < 600 && found === null; i++) {
+        for (let i = 0; i < 3000 && found === null; i++) {
           const before = this.events.length;
           this.genPhase();
           for (let j = before; j < this.events.length; j++) {
