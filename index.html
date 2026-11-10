@@ -50,13 +50,7 @@
                 <span class="value">kg</span>
               </div>
             </div>
-            <div class="row">
-              <label for="ageYears">年齢</label>
-              <div class="slider-box">
-                <input id="ageYears" type="number" min="5" max="99" step="1" value="20" />
-                <span class="value">歳</span>
-              </div>
-            </div>
+
             <div class="row">
               <label for="initialSpeed">初期速度</label>
               <div class="slider-box">
@@ -94,9 +88,17 @@
         </div>
 
         <div class="rt-head">
-          <div class="big-counter"><span class="dim" id="bcDim">00</span><span id="bcMain">0</span></div>
-          <div class="chevrons" id="chevrons" aria-hidden="true"></div>
-          <p class="rt-caption">完了シャトル数 ／ 現在のシャトルの残り</p>
+          <p class="rt-label">シャトル回数</p>
+          <div class="big-counter" id="bigCount">0</div>
+          <div class="track" aria-hidden="true">
+            <div class="track-line"></div>
+            <div class="track-tick" style="left: 25%"></div>
+            <div class="track-tick" style="left: 50%"></div>
+            <div class="track-tick" style="left: 75%"></div>
+            <div class="track-marker" id="trackMarker"></div>
+          </div>
+          <div class="track-ends" aria-hidden="true"><span>0 m</span><span>20 m</span></div>
+          <p class="rt-caption">次の合図まで あと <span id="remainVal">9.00</span> 秒</p>
         </div>
 
         <div class="grid">
@@ -109,24 +111,16 @@
             <p class="cell-value" id="speedVal">8.0</p>
           </div>
           <div class="cell">
-            <p class="cell-label">シャトル</p>
-            <p class="cell-value" id="shuttleVal">0</p>
+            <p class="cell-label">経過時間 秒</p>
+            <p class="cell-value" id="timeVal">0.00</p>
           </div>
           <div class="cell">
-            <p class="cell-label">総走行時間</p>
-            <p class="cell-value time" id="timeVal">00:00.00</p>
+            <p class="cell-label">現在の音</p>
+            <p class="cell-value" id="noteVal">ド</p>
           </div>
           <div class="cell detail-cell">
-            <p class="cell-label">シャトル時間 秒</p>
+            <p class="cell-label">1シャトル 秒</p>
             <p class="cell-value" id="shuttleTimeVal">9.00</p>
-          </div>
-          <div class="cell detail-cell">
-            <p class="cell-label">次のレベルまで 秒</p>
-            <p class="cell-value" id="nextLevelVal">60.00</p>
-          </div>
-          <div class="cell detail-cell">
-            <p class="cell-label">次のレベルまで シャトル</p>
-            <p class="cell-value" id="nextLevelShuttlesVal">7</p>
           </div>
           <div class="cell detail-cell">
             <p class="cell-label">ペース /km</p>
@@ -137,16 +131,16 @@
             <p class="cell-value" id="distanceVal">0.0</p>
           </div>
           <div class="cell detail-cell">
+            <p class="cell-label">平均速度 km/h</p>
+            <p class="cell-value" id="avgSpeedVal">8.0</p>
+          </div>
+          <div class="cell detail-cell">
             <p class="cell-label">消費カロリー kcal</p>
             <p class="cell-value" id="calorieVal">0.00</p>
           </div>
           <div class="cell detail-cell">
-            <p class="cell-label">METs</p>
-            <p class="cell-value" id="metsVal">8.62</p>
-          </div>
-          <div class="cell detail-cell">
-            <p class="cell-label">最大酸素摂取量 ml/kg/分</p>
-            <p class="cell-value" id="vo2Val">16.55</p>
+            <p class="cell-label">次のレベルまで 秒</p>
+            <p class="cell-value" id="nextLevelVal">60.00</p>
           </div>
         </div>
         <button id="stopBtn" class="stop-btn" type="button">ストップ</button>

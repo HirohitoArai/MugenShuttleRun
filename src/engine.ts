@@ -245,11 +245,13 @@ export class Engine {
     elapsed: number;
     completed: number;
     shuttleIndex: number;
+    shuttleProgress: number;
     shuttleDuration: number;
     shuttleRemaining: number;
     distanceM: number;
     nextLevelInSec: number | null;
-    nextLevelShuttles: number | null;
+    noteIndex: number;
+    noteDir: 'up' | 'down';
   } | null {
     if (!this.ctx || this.display.phase === 'idle') return null;
     const now = this.ctx.currentTime;
@@ -283,15 +285,22 @@ export class Engine {
     const progress = Math.min(Math.max((now - phaseStart) / duration, 0), 1);
     const distanceM = completed * 20 + progress * 20;
 
+    // 現在の音: フェイズは up/down が交互。フェイズ内の note の順番から音名を決める
+    const noteDir: 'up' | 'down' = completed % 2 === 0 ? 'up' : 'down';
+    let noteOrder = 0;
+    for (const ev of this.events) {
+      if (ev.time > now) break;
+      if (ev.kind === 'note' && ev.time > phaseStart) noteOrder++;
+    }
+    const step = Math.max(noteOrder - 1, 0);
+    const noteIndex = noteDir === 'up' ? step : 7 - step;
+
     // 次のレベルアップ（leveledUp な wrap）を探す
     let nextLevelInSec: number | null = null;
-    let nextLevelShuttles: number | null = null;
     {
-      let wraps = 0;
       let found: number | null = null;
       for (const ev of this.events) {
         if (ev.kind !== 'wrap' || ev.time <= now) continue;
-        wraps++;
         if (ev.leveledUp) {
           found = ev.time;
           break;
@@ -305,7 +314,6 @@ export class Engine {
           for (let j = before; j < this.events.length; j++) {
             const ev = this.events[j];
             if (ev.kind !== 'wrap' || ev.time <= now) continue;
-            wraps++;
             if (ev.leveledUp) {
               found = ev.time;
               break;
@@ -313,21 +321,20 @@ export class Engine {
           }
         }
       }
-      if (found !== null) {
-        nextLevelInSec = Math.max(found - now, 0);
-        nextLevelShuttles = wraps;
-      }
+      if (found !== null) nextLevelInSec = Math.max(found - now, 0);
     }
 
     return {
       elapsed,
       completed,
       shuttleIndex: completed + 1,
+      shuttleProgress: progress,
       shuttleDuration: duration,
       shuttleRemaining: remaining,
       distanceM,
       nextLevelInSec,
-      nextLevelShuttles,
+      noteIndex,
+      noteDir,
     };
   }
 
