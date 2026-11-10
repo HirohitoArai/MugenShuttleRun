@@ -30,16 +30,33 @@ export function fmtMan(x: number): { text: string; suffix: string } {
   return { text: fmtScaled(v), suffix: MAN_UNITS[u] };
 }
 
-/** 時間: 秒 → 分 → 時間 → 日 → 年 と単位を上げる */
-export function fmtDuration(sec: number): { text: string; unit: string } {
-  if (sec < 60) return { text: sec.toFixed(2), unit: '秒' };
-  const min = sec / 60;
-  if (min < 60) return { text: fmtScaled(min), unit: '分' };
-  const hr = min / 60;
-  if (hr < 24) return { text: fmtScaled(hr), unit: '時間' };
-  const day = hr / 24;
-  if (day < 365) return { text: fmtScaled(day), unit: '日' };
-  return { text: fmtScaled(day / 365), unit: '年' };
+/**
+ * 時間: 「何分何秒」の複合表記にする（1.55分 のような小数表記はしない）。
+ * 60秒未満は秒（小数2桁）、1時間未満は 分＋秒（小数2桁）、
+ * 24時間未満は 時間＋分＋秒、365日未満は 日＋時間＋分、それ以上は 年＋日。
+ */
+export function fmtDuration(sec: number): string {
+  if (sec < 60) return `${sec.toFixed(2)}秒`;
+  if (sec < 3600) {
+    const m = Math.floor(sec / 60);
+    const s = sec - m * 60;
+    return `${m}分${s.toFixed(2).padStart(5, '0')}秒`;
+  }
+  if (sec < 86400) {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    return `${h}時間${m}分${s}秒`;
+  }
+  if (sec < 86400 * 365) {
+    const d = Math.floor(sec / 86400);
+    const h = Math.floor((sec % 86400) / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    return `${d}日${h}時間${m}分`;
+  }
+  const y = Math.floor(sec / (86400 * 365));
+  const d = Math.floor((sec % (86400 * 365)) / 86400);
+  return `${y}年${d}日`;
 }
 
 /** 距離: m → km → 万km → 億km … */

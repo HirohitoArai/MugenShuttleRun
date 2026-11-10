@@ -97,10 +97,7 @@ let lastDisplay: DisplayState | null = null;
 
 const NOTE_NAMES = ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ラ', 'シ', 'ド'];
 const distanceLabel = $('distanceLabel');
-const timeLabel = $('timeLabel');
-const shuttleTimeLabel = $('shuttleTimeLabel');
 const calorieLabel = $('calorieLabel');
-const nextLevelLabel = $('nextLevelLabel');
 
 // ---- 無限に増える数値の表示（単位を段階的に上げ、桁が伸び続けないようにする） ----
 // 整形ロジックは format.ts（単体テスト対象）
@@ -140,17 +137,11 @@ function renderRT(): void {
   trackMarker.style.left = `${(pos * 100).toFixed(2)}%`;
   remainVal.textContent = info.shuttleRemaining.toFixed(2);
 
-  const elapsed = fmtDuration(info.elapsed);
-  setFit(timeVal, elapsed.text, 42);
-  timeLabel.textContent = `経過時間 ${elapsed.unit}`;
+  setFit(timeVal, fmtDuration(info.elapsed), 42);
   noteVal.textContent = NOTE_NAMES[info.noteIndex] ?? 'ド';
-  const shuttleDur = fmtDuration(info.shuttleDuration);
-  setFit(shuttleTimeVal, shuttleDur.text, 42);
-  shuttleTimeLabel.textContent = `1シャトル ${shuttleDur.unit}`;
+  setFit(shuttleTimeVal, fmtDuration(info.shuttleDuration), 42);
   if (info.nextLevelInSec !== null) {
-    const nl = fmtDuration(info.nextLevelInSec);
-    setFit(nextLevelVal, nl.text, 42);
-    nextLevelLabel.textContent = `次のレベルまで ${nl.unit}`;
+    setFit(nextLevelVal, fmtDuration(info.nextLevelInSec), 42);
   } else {
     setFit(nextLevelVal, '--', 42);
   }
@@ -190,7 +181,7 @@ $('startBtn').addEventListener('click', async () => {
   renderCount(0);
   trackMarker.style.left = '0%';
   timeVal.dataset.t = '';
-  setFit(timeVal, '0.00', 42);
+  setFit(timeVal, '0.00秒', 42);
   noteVal.textContent = 'ド';
   const params = !isDetail()
     ? { ...NORMAL_PARAMS }
