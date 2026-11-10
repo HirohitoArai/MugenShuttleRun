@@ -81,20 +81,28 @@ export function atempoChain(tempo: number): number[] {
 const cache = new Map<number, Promise<ArrayBuffer | null>>();
 let queue: Promise<unknown> = Promise.resolve();
 
+// 変換待ちの上限。レベルアップが変換速度を超えるペースで来る設定では、
+// キューを際限なく溜めず、新規変換を見送って原音で鳴らす（劣化は音色だけに留める）。
+const MAX_PENDING_CONVERSIONS = 6;
+let pendingConversions = 0;
+
 /**
  * tempo 倍速（ピッチ保持）の WAV を返す。tempo=1 なら null（= 原音を使う合図）。
  * 変換は直列キューで実行し、同じ tempo の変換は1回だけ行う。
+ * 変換が追いつかない時は null を返して原音フォールバックさせる。
  */
 export function convertLevelUp(tempo: number): Promise<ArrayBuffer | null> {
   if (Math.abs(tempo - 1) < 0.001) return Promise.resolve(null);
   const tempoKey = Math.round(tempo * 1000); // tempo をキャッシュのキーにする（小数3桁まで）
   const existing = cache.get(tempoKey);
   if (existing) return existing;
+  if (pendingConversions >= MAX_PENDING_CONVERSIONS) return Promise.resolve(null);
 
+  pendingConversions++;
   const job = queue.then(async (): Promise<ArrayBuffer | null> => {
-    const ok = await ensureConverter();
-    if (!ok || !ffmpeg || !sourceBytes) return null;
     try {
+      const ok = await ensureConverter();
+      if (!ok || !ffmpeg || !sourceBytes) return null;
       const filter = atempoChain(tempo)
         .map((v) => `atempo=${v}`)
         .join(',');
@@ -109,6 +117,8 @@ export function convertLevelUp(tempo: number): Promise<ArrayBuffer | null> {
     } catch (e) {
       console.warn('atempo conversion failed', e);
       return null;
+    } finally {
+      pendingConversions--;
     }
   });
   queue = job.catch(() => undefined);

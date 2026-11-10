@@ -179,12 +179,6 @@ $('startBtn').addEventListener('click', async () => {
   const tone = TONE_SETS.find((t) => t.id === toneSelect.value) ?? defaultTone;
   await setLevelUpSource(tone.levelup).catch(() => undefined);
   sessionWeightKg = Math.min(200, Math.max(20, parseFloat(weightKg.value) || 60));
-  bigCount.dataset.t = '';
-  renderCount(0);
-  trackMarker.style.left = '0%';
-  timeVal.dataset.t = '';
-  setFit(timeVal, '0.00秒', 42);
-  noteVal.textContent = 'ド';
   const params = !isDetail()
     ? { ...NORMAL_PARAMS }
     : {
@@ -192,6 +186,22 @@ $('startBtn').addEventListener('click', async () => {
         speedRate: parseFloat(speedRate.value),
         levelIntervalSec: parseFloat(levelInterval.value),
       };
+  // 実行画面の値を初期状態に戻す（前回の値がカウントダウン中に残らないように）
+  bigCount.dataset.t = '';
+  renderCount(0);
+  trackMarker.style.left = '0%';
+  timeVal.dataset.t = '';
+  setFit(timeVal, '0.00秒', 42);
+  noteVal.textContent = 'ド';
+  const shuttleSec = 72 / Math.max(params.initialSpeed, 0.1);
+  setFit(shuttleTimeVal, fmtDuration(shuttleSec), 42);
+  remainVal.textContent = shuttleSec.toFixed(2);
+  setFit(nextLevelVal, '--', 42);
+  setFit(distanceVal, '0', 42);
+  distanceLabel.textContent = '総走行距離 m';
+  setFit(calorieVal, '0', 42);
+  calorieLabel.textContent = '消費カロリー kcal';
+  setFit(avgSpeedVal, params.initialSpeed.toFixed(1), 42);
   runPanel.classList.toggle('detail', isDetail());
   await engine.start(params, tone);
   cancelAnimationFrame(rafId);

@@ -179,11 +179,12 @@ export class Engine {
       if (this.gPhaseStart > now + HORIZON) break;
       this.genPhase();
     }
-    // 音の予約
+    // 音の予約。処理落ちで大幅に遅れたイベントは、まとめて鳴らさず捨てる
+    // （遅れの回復時に音が一斉に重なって負荷が跳ねるのを防ぐ）。
     while (this.schedPtr < this.events.length) {
       const ev = this.events[this.schedPtr];
       if (ev.time > now + HORIZON) break;
-      this.scheduleEventAudio(ev);
+      if (ev.time >= now - 0.25) this.scheduleEventAudio(ev);
       this.schedPtr++;
     }
     // 表示の反映
