@@ -288,6 +288,7 @@ export class Engine {
     shuttleRemaining: number;
     distanceM: number;
     nextLevelInSec: number;
+    nextLevelShuttles: number;
     noteIndex: number;
   } | null {
     if (!this.ctx || this.display.phase === 'idle') return null;
@@ -301,17 +302,20 @@ export class Engine {
     const progress = phaseElapsed / duration;
     const completed = this.display.shuttles;
 
-    // 次のレベルアップまでの秒数。生成済みなら生成側の正確な時刻を使い、
+    // 次のレベルアップまでの秒数とシャトル数。生成済みなら生成側の正確な値を使い、
     // まだ生成されていない先の話なら、折り返し本数を割り算で数える
     // （境界条件が割り算の誤差で1本ずれることがあるが、近づけば生成側の値に切り替わる）。
     let nextLevelInSec: number;
+    let nextLevelShuttles: number;
     const upcoming = this.upcomingLevelUps[0];
     if (upcoming) {
       nextLevelInSec = Math.max(upcoming.time - now, 0);
+      nextLevelShuttles = Math.max(upcoming.shuttlesAfter - completed, 1);
     } else {
       const threshold = this.liveLevelElapsed + this.params.levelIntervalSec;
       const wrapsToLevelUp = Math.max(1, Math.floor((threshold - elapsed + phaseElapsed) / duration) + 1);
       nextLevelInSec = Math.max(phaseStart + wrapsToLevelUp * duration - now, 0);
+      nextLevelShuttles = wrapsToLevelUp;
     }
 
     // 現在の音: フェイズ内で鳴った note の順番と向きから決まる
@@ -327,6 +331,7 @@ export class Engine {
       shuttleRemaining: duration - phaseElapsed,
       distanceM: completed * 20 + progress * 20,
       nextLevelInSec,
+      nextLevelShuttles,
       noteIndex,
     };
   }

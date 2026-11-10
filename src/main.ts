@@ -80,6 +80,7 @@ const paceVal = $('paceVal');
 const distanceVal = $('distanceVal');
 const calorieVal = $('calorieVal');
 const nextLevelVal = $('nextLevelVal');
+const nextLevelShuttlesVal = $('nextLevelShuttlesVal');
 const avgSpeedVal = $('avgSpeedVal');
 const bigCount = $('bigCount');
 const trackMarker = $('trackMarker');
@@ -147,6 +148,7 @@ function renderRT(): void {
   noteVal.textContent = NOTE_NAMES[info.noteIndex] ?? 'ド';
   setFit(shuttleTimeVal, fmtDuration(info.shuttleDuration), 42);
   setFit(nextLevelVal, fmtDuration(info.nextLevelInSec), 42);
+  setFit(nextLevelShuttlesVal, String(info.nextLevelShuttles), 42);
   const dist = fmtDistance(info.distanceM);
   setFit(distanceVal, dist.text, 42);
   distanceLabel.textContent = `総走行距離 ${dist.unit}`;
@@ -197,6 +199,7 @@ $('startBtn').addEventListener('click', async () => {
   setFit(shuttleTimeVal, fmtDuration(shuttleSec), 42);
   remainVal.textContent = shuttleSec.toFixed(2);
   setFit(nextLevelVal, '--', 42);
+  setFit(nextLevelShuttlesVal, '--', 42);
   setFit(distanceVal, '0', 42);
   distanceLabel.textContent = '総走行距離 m';
   setFit(calorieVal, '0', 42);
