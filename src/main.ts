@@ -37,6 +37,21 @@ for (const t of TONE_SETS) {
   toneSelect.appendChild(opt);
 }
 
+// モード選択: カスタムの時だけスライダーを出す
+const modeSelect = $<HTMLSelectElement>('modeSelect');
+const sliderRows = $('sliderRows');
+const weightKg = $<HTMLInputElement>('weightKg');
+function applyMode(): void {
+  sliderRows.hidden = modeSelect.value !== 'custom';
+}
+modeSelect.addEventListener('change', applyMode);
+applyMode();
+
+// 普通のシャトルランのパラメータ（Léger 標準表: 初期 8.0 / 変化 0.5 / 1分ごと。
+// Lv1→2 だけ2倍になる規則と合わせると公式の速度推移になる）
+const NORMAL_PARAMS = { initialSpeed: 8.0, speedRate: 0.5, levelIntervalSec: 60 };
+let sessionWeightKg = 60;
+
 // 変換エンジンの状態表示
 onConverterStatus((s) => {
   engineStatus.textContent =
@@ -65,6 +80,11 @@ function fmtTime(sec: number): string {
   return `${p(h)}:${p(m)}:${p(ss)}`;
 }
 
+const shuttleTimeVal = $('shuttleTimeVal');
+const paceVal = $('paceVal');
+const distanceVal = $('distanceVal');
+const calorieVal = $('calorieVal');
+
 engine.onDisplay = (d: DisplayState) => {
   if (d.phase === 'idle') {
     homePanel.hidden = false;
@@ -79,19 +99,30 @@ engine.onDisplay = (d: DisplayState) => {
   speedVal.textContent = d.speed.toFixed(1);
   shuttleVal.textContent = String(d.shuttles);
   timeVal.textContent = fmtTime(d.elapsedSec);
+  // 運動指標（速度とシャトル数からの換算）
+  const speed = Math.max(d.speed, 0.1);
+  shuttleTimeVal.textContent = (72 / speed).toFixed(2); // 20m を現速度で走る秒数
+  const paceSec = 3600 / speed;
+  paceVal.textContent = `${Math.floor(paceSec / 60)}:${String(Math.floor(paceSec % 60)).padStart(2, '0')}`;
+  const distanceM = d.shuttles * 20;
+  distanceVal.textContent = distanceM.toLocaleString('ja-JP');
+  // 消費カロリー推定: ランニングの目安 1.05 kcal × 体重kg × 距離km
+  calorieVal.textContent = String(Math.round(1.05 * sessionWeightKg * (distanceM / 1000)));
 };
 
 $('startBtn').addEventListener('click', async () => {
   const tone = TONE_SETS.find((t) => t.id === toneSelect.value) ?? defaultTone;
   await setLevelUpSource(tone.levelup).catch(() => undefined);
-  await engine.start(
-    {
-      initialSpeed: parseFloat(initialSpeed.value),
-      speedRate: parseFloat(speedRate.value),
-      levelIntervalSec: parseFloat(levelInterval.value),
-    },
-    tone,
-  );
+  sessionWeightKg = Math.min(200, Math.max(20, parseFloat(weightKg.value) || 60));
+  const params =
+    modeSelect.value === 'normal'
+      ? { ...NORMAL_PARAMS }
+      : {
+          initialSpeed: parseFloat(initialSpeed.value),
+          speedRate: parseFloat(speedRate.value),
+          levelIntervalSec: parseFloat(levelInterval.value),
+        };
+  await engine.start(params, tone);
 });
 
 $('stopBtn').addEventListener('click', () => engine.stop());

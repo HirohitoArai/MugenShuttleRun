@@ -119,6 +119,19 @@ select {
   color: var(--ink);
 }
 
+input[type='number'] {
+  flex: 1;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 8px;
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: #fff;
+  color: var(--ink);
+  min-width: 0;
+}
+
 input[type='range'] {
   flex: 1;
   appearance: none;
@@ -206,7 +219,7 @@ input[type='range']::-moz-range-thumb {
   border-right: none;
 }
 
-.cell:nth-child(n + 3) {
+.cell:nth-last-child(-n + 2) {
   border-bottom: none;
 }
 
@@ -221,14 +234,14 @@ input[type='range']::-moz-range-thumb {
 .cell-value {
   margin: 0;
   font-family: 'keifont', sans-serif;
-  font-size: 52px;
+  font-size: 42px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .cell-value.time {
-  font-size: 38px;
-  padding-top: 8px;
+  font-size: 30px;
+  padding-top: 6px;
 }
 
 .count-overlay {
@@ -268,9 +281,9 @@ input[type='range']::-moz-range-thumb {
     font-size: 14px;
   }
   .cell-value {
-    font-size: 44px;
+    font-size: 36px;
   }
   .cell-value.time {
-    font-size: 32px;
+    font-size: 26px;
   }
 }
