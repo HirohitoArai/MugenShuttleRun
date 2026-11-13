@@ -598,3 +598,8 @@ input[type='range']::-moz-range-thumb {
 .cell.wide {
   text-align: center;
 }
+
+/* ネイティブアプリでバナー広告が出る時、画面下部が隠れないようにする */
+.native-ads .sheet {
+  padding-bottom: 120px;
+}

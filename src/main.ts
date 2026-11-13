@@ -3,6 +3,7 @@ import { Engine, TONE_SETS, type DisplayState } from './engine';
 import { ensureConverter, setLevelUpSource, onConverterStatus, type ConverterStatus } from './convert';
 import { fmtDuration, fmtDurationFull, fmtDistance, fmtCalories, setFormatLang } from './format';
 import { STR, type Lang } from './i18n';
+import { initAds } from './ads';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -138,6 +139,7 @@ function applyLang(l: Lang): void {
 $('langJa').addEventListener('click', () => applyLang('ja'));
 $('langEn').addEventListener('click', () => applyLang('en'));
 applyLang(lang);
+void initAds();
 
 // ---- 無限に増える数値の表示（単位を段階的に上げ、桁が伸び続けないようにする） ----
 // 整形ロジックは format.ts（単体テスト対象）
