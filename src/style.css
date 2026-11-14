@@ -233,6 +233,7 @@ input[type='range']::-moz-range-thumb {
 
 /* リアルタイム表示ヘッダー（回数カウンター＋20mトラック） */
 .rt-head {
+  position: relative;
   border: 2px solid var(--line);
   background: #f2f8fd;
   padding: 12px 16px 10px;
@@ -585,9 +586,11 @@ input[type='range']::-moz-range-thumb {
 }
 
 /* カウントダウン中はシャトル回数まわりの表示を消す（visibility で場所は保ち、レイアウトを動かさない） */
-#runPanel.counting .rt-label,
 #runPanel.counting .track,
 #runPanel.counting .track-ends,
 #runPanel.counting .rt-caption {
   visibility: hidden;
+}
+#runPanel.counting .big-counter {
+  text-align: center;
 }

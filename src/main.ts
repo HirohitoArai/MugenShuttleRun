@@ -59,6 +59,12 @@ let sessionWeightKg = 60;
 // 表示言語（日本語 / English）。フッターの小さなボタンで切り替え、選択は保存する
 let lang: Lang = localStorage.getItem('mugen-lang') === 'en' ? 'en' : 'ja';
 
+// カウンターのラベル: カウントダウン中は「開始まで」、実行中は「シャトル回数」
+let curPhase: DisplayState['phase'] = 'idle';
+function renderCountLabel(): void {
+  $('lblShuttleCount').textContent = curPhase === 'countdown' ? STR[lang].untilStart : STR[lang].shuttleCount;
+}
+
 // 変換エンジンの状態表示（言語切替で再描画できるよう状態を保持する）
 let convStatus: ConverterStatus = 'idle';
 function renderConvStatus(): void {
@@ -115,7 +121,7 @@ function applyLang(l: Lang): void {
   $('levelIntervalUnit').textContent = s.levelIntervalUnit;
   $('startBtn').textContent = s.start;
   $('startNote').textContent = s.startNote;
-  $('lblShuttleCount').textContent = s.shuttleCount;
+  renderCountLabel();
   $('captionPre').textContent = s.captionPre;
   $('captionPost').textContent = s.captionPost;
   $('lblLevel').textContent = s.level;
@@ -219,10 +225,22 @@ engine.onDisplay = (d: DisplayState) => {
   }
   homePanel.hidden = true;
   runPanel.hidden = false;
+  curPhase = d.phase;
+  renderCountLabel();
   // カウントダウンは別ブロックを出さず、シャトル回数のカウンターでそのまま数える（画面レイアウトを変えない）
   if (d.phase === 'countdown') renderCount(d.count);
-  // カウントダウン中はシャトル回数特有の表示（ラベル・トラック・次の合図）を消す（場所は確保したままにして大きさを変えない）
+  // カウントダウン中はシャトル回数特有の表示（トラック・次の合図）を消す（場所は確保したままにして大きさを変えない）
   runPanel.classList.toggle('counting', d.phase === 'countdown');
+  if (d.phase === 'countdown') {
+    // 数字をボックスの真ん中へ（transform なのでレイアウトは動かない）
+    const head = runPanel.querySelector<HTMLElement>('.rt-head');
+    if (head) {
+      const dy = Math.round(head.clientHeight / 2 - (bigCount.offsetTop + bigCount.offsetHeight / 2));
+      bigCount.style.transform = `translateY(${dy}px)`;
+    }
+  } else {
+    bigCount.style.transform = '';
+  }
   setFit(levelVal, String(d.level), 42);
   setFit(speedVal, d.speed.toFixed(1), 42);
   const speed = Math.max(d.speed, 0.1);
