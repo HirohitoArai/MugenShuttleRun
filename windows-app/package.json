@@ -1,0 +1,12 @@
+{
+  "main": "main.js",
+  "name": "mugen-shuttle-run-win",
+  "private": true,
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^45.3.2",
+    "electron-packager": "^17.1.2"
+  }
+}
