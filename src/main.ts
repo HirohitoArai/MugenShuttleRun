@@ -221,6 +221,8 @@ engine.onDisplay = (d: DisplayState) => {
   runPanel.hidden = false;
   // カウントダウンは別ブロックを出さず、シャトル回数のカウンターでそのまま数える（画面レイアウトを変えない）
   if (d.phase === 'countdown') renderCount(d.count);
+  // カウントダウン中はシャトル回数特有の表示（ラベル・トラック・次の合図）を消す（場所は確保したままにして大きさを変えない）
+  runPanel.classList.toggle('counting', d.phase === 'countdown');
   setFit(levelVal, String(d.level), 42);
   setFit(speedVal, d.speed.toFixed(1), 42);
   const speed = Math.max(d.speed, 0.1);

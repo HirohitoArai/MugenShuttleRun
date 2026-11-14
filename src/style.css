@@ -583,3 +583,11 @@ input[type='range']::-moz-range-thumb {
 .native-ads .sheet {
   padding-bottom: 120px;
 }
+
+/* カウントダウン中はシャトル回数まわりの表示を消す（visibility で場所は保ち、レイアウトを動かさない） */
+#runPanel.counting .rt-label,
+#runPanel.counting .track,
+#runPanel.counting .track-ends,
+#runPanel.counting .rt-caption {
+  visibility: hidden;
+}
