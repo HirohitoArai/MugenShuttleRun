@@ -9,8 +9,6 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 
 const homePanel = $('homePanel');
 const runPanel = $('runPanel');
-const countOverlay = $('countOverlay');
-const countNum = $('countNum');
 const levelVal = $('levelVal');
 const speedVal = $('speedVal');
 const timeVal = $('timeVal');
@@ -221,8 +219,8 @@ engine.onDisplay = (d: DisplayState) => {
   }
   homePanel.hidden = true;
   runPanel.hidden = false;
-  countOverlay.hidden = d.phase !== 'countdown';
-  countNum.textContent = String(d.count);
+  // カウントダウンは別ブロックを出さず、シャトル回数のカウンターでそのまま数える（画面レイアウトを変えない）
+  if (d.phase === 'countdown') renderCount(d.count);
   setFit(levelVal, String(d.level), 42);
   setFit(speedVal, d.speed.toFixed(1), 42);
   const speed = Math.max(d.speed, 0.1);

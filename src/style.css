@@ -1,11 +1,11 @@
 /* @font-face は index.html 側で相対パス指定する（GitHub Pages のサブパス対策） */
 
 :root {
-  --paper: #f3efe4;
-  --ink: #1c1a17;
-  --red: #b3271e;
-  --line: #1c1a17;
-  --faint: #6f6a5e;
+  --paper: #ffffff;
+  --ink: #17384f;
+  --accent: #1b7fc4;
+  --line: #17384f;
+  --faint: #5b7183;
 }
 
 * {
@@ -60,7 +60,7 @@ body {
   border: 2px solid var(--line);
   padding: 18px 16px 8px;
   position: relative;
-  background: #faf7ee;
+  background: #f2f8fd;
 }
 
 .panel-label {
@@ -80,7 +80,7 @@ body {
   align-items: center;
   gap: 12px;
   padding: 12px 0;
-  border-bottom: 1px solid #d8d2c0;
+  border-bottom: 1px solid #cfe0ee;
 }
 
 .row:last-child {
@@ -178,12 +178,12 @@ input[type='range']::-moz-range-thumb {
 }
 
 .start-btn {
-  background: var(--red);
+  background: var(--accent);
   color: #fff;
 }
 
 .start-btn:active {
-  background: #8f1d16;
+  background: #14679e;
 }
 
 .stop-btn {
@@ -206,13 +206,13 @@ input[type='range']::-moz-range-thumb {
   display: grid;
   grid-template-columns: 1fr 1fr;
   border: 2px solid var(--line);
-  background: #faf7ee;
+  background: #f2f8fd;
 }
 
 .cell {
   padding: 16px 14px 12px;
-  border-right: 1px solid #d8d2c0;
-  border-bottom: 1px solid #d8d2c0;
+  border-right: 1px solid #cfe0ee;
+  border-bottom: 1px solid #cfe0ee;
 }
 
 /* 右列のセル（横幅いっぱいのセルも含む）は右の区切り線なし */
@@ -234,7 +234,7 @@ input[type='range']::-moz-range-thumb {
 /* リアルタイム表示ヘッダー（回数カウンター＋20mトラック） */
 .rt-head {
   border: 2px solid var(--line);
-  background: #faf7ee;
+  background: #f2f8fd;
   padding: 12px 16px 10px;
   margin-bottom: 16px;
 }
@@ -287,7 +287,7 @@ input[type='range']::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--red);
+  background: var(--accent);
   border: 2px solid var(--ink);
   transform: translate(-50%, -50%);
 }
@@ -345,20 +345,6 @@ input[type='range']::-moz-range-thumb {
   padding-top: 6px;
 }
 
-.count-overlay {
-  border: 3px solid var(--red);
-  color: var(--red);
-  text-align: center;
-  padding: 10px 0 2px;
-  margin-bottom: 16px;
-  background: #faf7ee;
-}
-
-.count-overlay span {
-  font-family: 'keifont', sans-serif;
-  font-size: 96px;
-  line-height: 1;
-}
 
 .foot {
   margin-top: auto;
@@ -369,7 +355,7 @@ input[type='range']::-moz-range-thumb {
 
 .foot p {
   margin: 0;
-  border-top: 1px solid #d8d2c0;
+  border-top: 1px solid #cfe0ee;
   padding-top: 10px;
 }
 
@@ -445,9 +431,6 @@ input[type='range']::-moz-range-thumb {
     grid-template-columns: 5fr 7fr;
     column-gap: 20px;
     align-items: start;
-  }
-  #runPanel .count-overlay {
-    grid-column: 1 / -1;
   }
   #runPanel .rt-head {
     grid-column: 1;
@@ -538,9 +521,6 @@ input[type='range']::-moz-range-thumb {
     max-width: 1040px;
     margin: 0 auto;
   }
-  .count-overlay span {
-    font-size: 130px;
-  }
 }
 
 /* 横長・実行画面: 回数を中央にどでかく置き、記録グリッドはその下に横いっぱい（v15） */
@@ -575,7 +555,7 @@ input[type='range']::-moz-range-thumb {
   /* 2列時代に右列扱いだったセルの区切り線を戻し、新しい行末だけ消す */
   #runPanel.detail .cell.rcol,
   #runPanel:not(.detail) .cell.rcol {
-    border-right: 1px solid #d8d2c0;
+    border-right: 1px solid #cfe0ee;
   }
   #runPanel.detail .cell:nth-child(5),
   #runPanel.detail .cell:nth-child(10),
