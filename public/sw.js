@@ -1,6 +1,6 @@
 // 無限シャトルラン Service Worker: 一度取得した資源はキャッシュから返し、
 // 初回ロード後はオフラインでも起動できるようにする。
-const CACHE = 'mugen-shuttle-run-v22';
+const CACHE = 'mugen-shuttle-run-v23';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
